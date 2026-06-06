@@ -1,5 +1,29 @@
 # AInvest CLI Agent 更新日志
 
+## [4.1.0] - 2026-06-07
+
+### 新增功能
+
+- **Tailwind 主题 token 重构**：15 个色值全面更新，新增 `surface-elevated`、`border-subtle`、`text-secondary` 三个语义化 token，三栏背景色差提升至 12-15%
+- **玻璃态卡片体系**：指数卡片、Agent 消息气泡、Session 项、个股详情卡片全面应用 `bg-surface/80 backdrop-blur-sm border border-border-subtle` 玻璃态组合
+- **全局样式层升级**：自定义滚动条（6px 极细）、文本选中态（primary/30%）、全局 150ms color transition
+
+### 优化
+
+- **图表色值同步**：recharts 硬编码色值与新 token 对齐（success `#10b981` / danger `#f43f5e`）
+- **字体规范化**：指数点位、价格、涨跌幅、PE/PB 等数字统一使用 `font-mono` 等宽字体
+- **标签文字层级**：`text-text-muted` 降级为更暗的 `#64748b`，原中等亮度语义迁移至 `text-text-secondary`
+
+### 修复
+
+- **ThinkingBlock 无限循环**：`useThinkingStore` selector 去掉 `|| []`，返回稳定引用，根治 Electron 下 React 渲染崩溃黑屏
+
+### 技术规范
+
+- TypeScript 编译零新增错误（基线一致）
+- ESLint 零新增错误（基线一致）
+- 无新增依赖
+
 ## [4.0.0] - 2026-06-06
 
 ### 新增功能
