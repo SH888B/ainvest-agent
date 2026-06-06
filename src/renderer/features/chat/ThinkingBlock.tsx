@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { shallow } from 'zustand/shallow'
 import { useThinkingStore, ThinkingStep } from '../../stores/useThinkingStore'
 import { ChevronDown, ChevronUp, Check, X, Loader2 } from 'lucide-react'
 
@@ -37,10 +36,10 @@ const StepIcon: React.FC<{ status: ThinkingStep['status'] }> = ({ status }) => {
  */
 export const ThinkingBlock: React.FC<ThinkingBlockProps> = React.memo(
   ({ turnId }) => {
-    const steps = useThinkingStore((state) => state.turns[turnId] || [], shallow)
+    const steps = useThinkingStore((state) => state.turns[turnId])
     const [expanded, setExpanded] = useState(false)
 
-    if (steps.length === 0) return null
+    if (!steps || steps.length === 0) return null
 
     const hasRunning = steps.some((s) => s.status === 'running')
     const allCompleted = steps.every((s) => s.status === 'completed')
