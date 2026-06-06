@@ -43,6 +43,15 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = React.memo(
 
     const hasRunning = steps.some((s) => s.status === 'running')
     const allCompleted = steps.every((s) => s.status === 'completed')
+    const hasFailed = steps.some((s) => s.status === 'failed')
+
+    const titleText = hasRunning
+      ? 'Agent 正在思考...'
+      : hasFailed
+        ? 'Agent 思考异常'
+        : allCompleted
+          ? 'Agent 思考完成'
+          : 'Agent 思考中...'
 
     return (
       <div className="mb-1 rounded-lg border border-border/50 bg-background/80 px-3 py-2 text-xs">
@@ -53,12 +62,14 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = React.memo(
         >
           {hasRunning ? (
             <Loader2 className="h-3 w-3 animate-spin text-primary" />
+          ) : hasFailed ? (
+            <X className="h-3 w-3 text-red-500" />
           ) : allCompleted ? (
             <Check className="h-3 w-3 text-green-500" />
           ) : (
             <div className="h-3 w-3 rounded-full border border-text-muted/30" />
           )}
-          <span>Agent 正在思考...</span>
+          <span>{titleText}</span>
           <span className="ml-auto">
             {expanded ? (
               <ChevronUp className="h-3 w-3" />

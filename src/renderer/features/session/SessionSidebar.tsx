@@ -11,6 +11,11 @@ import { Plus, Sparkles, Loader2 } from 'lucide-react'
  * Session 侧边栏
  * 展示 Session 列表、新建按钮、总结偏好按钮
  */
+interface Notification {
+  type: 'success' | 'error' | 'info'
+  message: string
+}
+
 export const SessionSidebar: React.FC = () => {
   const { sessions, currentSessionId, createSession, switchSession, renameSession, deleteSession } =
     useSessionStore()
@@ -20,6 +25,7 @@ export const SessionSidebar: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [summarizing, setSummarizing] = useState(false)
+  const [notification, setNotification] = useState<Notification | null>(null)
 
   const handleStartRename = (id: string, currentTitle: string) => {
     setEditingId(id)
@@ -34,20 +40,26 @@ export const SessionSidebar: React.FC = () => {
     setEditTitle('')
   }
 
+  const showNotification = (type: Notification['type'], message: string) => {
+    setNotification({ type, message })
+    // 3 秒后自动清除
+    setTimeout(() => setNotification(null), 3000)
+  }
+
   const handleSummarizePreference = async () => {
     if (!currentSessionId) {
-      alert('请先选择一个对话 Session')
+      showNotification('error', '请先选择一个对话 Session')
       return
     }
 
     const messages = getMessages(currentSessionId)
     if (messages.length === 0) {
-      alert('当前 Session 没有对话内容，无法提炼偏好')
+      showNotification('info', '当前 Session 没有对话内容，无法提炼偏好')
       return
     }
 
     if (!isConfigValid) {
-      alert('尚未配置大模型，无法提炼偏好')
+      showNotification('error', '尚未配置大模型，无法提炼偏好')
       return
     }
 
@@ -57,9 +69,19 @@ export const SessionSidebar: React.FC = () => {
       const merged = mergeMemory(memory, extracted)
       updateMemory(merged)
       await saveMemory()
-      alert(`偏好提炼完成！\n\n风险偏好：${merged.riskPreference || '未识别'}\n关注板块：${(merged.focusSectors || []).join('、') || '无'}\n摘要：${merged.summary || '无'}`)
+
+      const parts: string[] = []
+      if (merged.riskPreference) parts.push(`风险偏好：${merged.riskPreference}`)
+      if (merged.focusSectors && merged.focusSectors.length > 0) parts.push(`关注板块：${merged.focusSectors.join('、')}`)
+      if (merged.summary) parts.push(`摘要：${merged.summary}`)
+
+      if (parts.length === 0) {
+        showNotification('info', '对话中暂未发现明确的偏好信息，多聊几句再试试吧')
+      } else {
+        showNotification('success', `偏好提炼完成：${parts.join('；')}`)
+      }
     } catch (err) {
-      alert(`提炼失败：${err instanceof Error ? err.message : String(err)}`)
+      showNotification('error', `提炼失败：${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setSummarizing(false)
     }
@@ -104,8 +126,21 @@ export const SessionSidebar: React.FC = () => {
         )}
       </div>
 
-      {/* 底部：总结今日偏好按钮 */}
-      <div className="border-t border-border p-3">
+      {/* 底部：总结今日偏好按钮 + 通知 */}
+      <div className="border-t border-border p-3 space-y-2">
+        {notification && (
+          <div
+            className={`rounded-lg px-3 py-2 text-xs ${
+              notification.type === 'success'
+                ? 'border border-green-500/30 bg-green-500/10 text-green-400'
+                : notification.type === 'error'
+                  ? 'border border-red-500/30 bg-red-500/10 text-red-400'
+                  : 'border border-blue-500/30 bg-blue-500/10 text-blue-400'
+            }`}
+          >
+            {notification.message}
+          </div>
+        )}
         <button
           onClick={handleSummarizePreference}
           disabled={summarizing}
