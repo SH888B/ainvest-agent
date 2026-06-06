@@ -2,16 +2,18 @@ import React from 'react'
 import { ChatMessage } from '@shared/types'
 import { User, Bot, Wrench } from 'lucide-react'
 import { ThinkingBlock } from './ThinkingBlock'
+import { MarkdownRenderer } from './components/MarkdownRenderer'
 
 interface MessageItemProps {
   message: ChatMessage
+  isStreaming?: boolean
 }
 
 /**
  * 单条消息组件
- * 支持用户消息、Agent 消息、工具卡片、Thinking 块
+ * 支持用户消息、Agent 消息（Markdown 渲染 / 流式纯文本）、工具卡片、Thinking 块
  */
-export const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
+export const MessageItem: React.FC<MessageItemProps> = ({ message, isStreaming }) => {
   const isUser = message.role === 'user'
   const isTool = message.role === 'tool'
   const isAssistant = message.role === 'assistant'
@@ -33,7 +35,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
       {/* 头像 */}
       <div
         className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-          isUser ? 'bg-primary' : 'bg-surface border border-border'
+          isUser ? 'bg-primary' : 'border border-border bg-surface'
         }`}
       >
         {isUser ? (
@@ -55,10 +57,16 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
           className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
             isUser
               ? 'bg-primary text-white'
-              : 'bg-surface text-text border border-border'
+              : 'border border-border bg-surface text-text'
           }`}
         >
-          <div className="whitespace-pre-wrap">{message.content}</div>
+          {isUser ? (
+            <div className="whitespace-pre-wrap">{message.content}</div>
+          ) : isStreaming ? (
+            <span className="whitespace-pre-wrap">{message.content}</span>
+          ) : (
+            <MarkdownRenderer content={message.content} />
+          )}
 
           {/* 工具调用展示 */}
           {isAssistant && message.tool_calls && message.tool_calls.length > 0 && (

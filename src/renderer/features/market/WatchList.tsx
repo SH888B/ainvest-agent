@@ -11,7 +11,13 @@ interface WatchListProps {
  * 支持添加/删除自选股（本地状态）
  */
 export const WatchList: React.FC<WatchListProps> = ({ onSelectSymbol }) => {
-  const [watchSymbols, setWatchSymbols] = useState<string[]>(['600519', 'AAPL'])
+  const [watchSymbols, setWatchSymbols] = useState<string[]>([
+    'AAPL',
+    'TSLA',
+    '0700.HK',
+    '9988.HK',
+    'NVDA',
+  ])
   const [inputSymbol, setInputSymbol] = useState('')
 
   const handleAdd = () => {

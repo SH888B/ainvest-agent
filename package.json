@@ -18,7 +18,9 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
-    "electron-updater": "^6.3.0"
+    "electron-updater": "^6.3.0",
+    "react-markdown": "^10.1.0",
+    "recharts": "^3.8.1"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

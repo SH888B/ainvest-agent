@@ -19,7 +19,7 @@ interface Notification {
 export const SessionSidebar: React.FC = () => {
   const { sessions, currentSessionId, createSession, switchSession, renameSession, deleteSession } =
     useSessionStore()
-  const { getMessages } = useChatStore()
+  const { getMessages, clearMessages } = useChatStore()
   const { llmConfig, isConfigValid } = usePreferenceStore()
   const { memory, updateMemory, saveMemory } = useMemoryStore()
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -118,7 +118,10 @@ export const SessionSidebar: React.FC = () => {
                 onStartRename={() => handleStartRename(session.id, session.title)}
                 onConfirmRename={handleConfirmRename}
                 onCancelRename={() => setEditingId(null)}
-                onDelete={() => deleteSession(session.id)}
+                onDelete={() => {
+                  clearMessages(session.id)
+                  deleteSession(session.id)
+                }}
                 onEditTitleChange={setEditTitle}
               />
             ))}

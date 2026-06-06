@@ -10,7 +10,8 @@ import { useMemoryStore } from '../../stores/useMemoryStore'
 import { useThinkingStore } from '../../stores/useThinkingStore'
 import { runAgentTurn } from '../../services/agent/agentEngine'
 import '../../services/tools'
-import { Settings } from 'lucide-react'
+import { Settings, Wrench } from 'lucide-react'
+import { useDevToolStore } from '../../stores/useDevToolStore'
 import { ChatMessage } from '@shared/types'
 
 /**
@@ -24,6 +25,7 @@ export const ChatPanel: React.FC = () => {
   const { getMessages, addMessage, appendAssistantContent, setLoading } = useChatStore()
   const { memory } = useMemoryStore()
   const { clearTurn } = useThinkingStore()
+  const { toggle: toggleDevTool } = useDevToolStore()
   const [input, setInput] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
 
@@ -100,12 +102,23 @@ export const ChatPanel: React.FC = () => {
       {/* 顶部栏 */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold text-text">智能助手</h2>
-        <button
-          onClick={() => setSettingsOpen(true)}
-          className="rounded p-1 text-text-muted hover:text-text"
-        >
-          <Settings className="h-4 w-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          {import.meta.env.DEV && (
+            <button
+              onClick={toggleDevTool}
+              className="rounded p-1 text-text-muted hover:text-text"
+              title="DevTool 看板"
+            >
+              <Wrench className="h-4 w-4" />
+            </button>
+          )}
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="rounded p-1 text-text-muted hover:text-text"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* API Key 未配置提示 */}

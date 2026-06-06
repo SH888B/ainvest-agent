@@ -19,6 +19,9 @@ export default {
         success: '#22c55e',
         warning: '#f59e0b',
         danger: '#ef4444',
+        'panel-left': '#0c0e14',
+        'panel-center': '#0f1117',
+        'panel-right': '#12141c',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

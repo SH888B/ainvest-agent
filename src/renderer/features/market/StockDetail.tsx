@@ -1,5 +1,6 @@
 import React from 'react'
 import { mockStockProfile, mockMarketQuery } from '../../services/mocks'
+import { StockChart } from './components/StockChart'
 import { TrendingUp, TrendingDown, Building2, User, Calendar } from 'lucide-react'
 
 interface StockDetailProps {
@@ -8,7 +9,7 @@ interface StockDetailProps {
 
 /**
  * 个股详情
- * 展示选中股票的基本面和行情数据
+ * 展示选中股票的基本面、行情数据和 30 日走势图
  */
 export const StockDetail: React.FC<StockDetailProps> = ({ symbol }) => {
   const profile = mockStockProfile(symbol)
@@ -21,6 +22,8 @@ export const StockDetail: React.FC<StockDetailProps> = ({ symbol }) => {
       </div>
     )
   }
+
+  const isUp = market ? market.change >= 0 : true
 
   return (
     <div className="space-y-4">
@@ -109,6 +112,9 @@ export const StockDetail: React.FC<StockDetailProps> = ({ symbol }) => {
           <p className="mt-3 text-sm leading-relaxed text-text-muted">{profile.description}</p>
         </div>
       )}
+
+      {/* 30 日走势图 */}
+      <StockChart symbol={symbol} isUp={isUp} />
     </div>
   )
 }

@@ -10,7 +10,7 @@ import { Bot } from 'lucide-react'
  */
 export const MessageList: React.FC = () => {
   const { currentSessionId } = useSessionStore()
-  const { getMessages } = useChatStore()
+  const { getMessages, isLoading } = useChatStore()
   const messages = currentSessionId ? getMessages(currentSessionId) : []
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -43,11 +43,19 @@ export const MessageList: React.FC = () => {
     )
   }
 
+  const lastIndex = messages.length - 1
+
   return (
     <div ref={scrollRef} className="h-full overflow-y-auto p-4">
       <div className="space-y-4">
         {messages.map((msg, index) => (
-          <MessageItem key={index} message={msg} />
+          <MessageItem
+            key={index}
+            message={msg}
+            isStreaming={
+              isLoading && index === lastIndex && msg.role === 'assistant'
+            }
+          />
         ))}
       </div>
     </div>
