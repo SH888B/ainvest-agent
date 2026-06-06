@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+out/
+dist/
+release/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Electron
+node_modules/electron/dist/
+!node_modules/electron/path.txt
+
+# Testing coverage
+coverage/
+
+# Optional: lock file (uncomment if using pnpm or yarn)
+# package-lock.json
+
+# Misc
+*.tmp
+*.temp

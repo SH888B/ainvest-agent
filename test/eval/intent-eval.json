@@ -1,0 +1,286 @@
+{
+  "version": "1.0",
+  "description": "意图识别评测集 - 覆盖本地正则+LLM双层策略的基准测试",
+  "tests": [
+    {
+      "id": "IC-001",
+      "input": "茅台今天多少钱",
+      "expected_intent": "market.query",
+      "expected_entities": { "symbol": "600519" },
+      "tags": ["行情", "中文简称", "价格"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-002",
+      "input": "600519 行情",
+      "expected_intent": "market.query",
+      "expected_entities": { "symbol": "600519" },
+      "tags": ["行情", "股票代码", "A股"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-003",
+      "input": "AAPL 股价",
+      "expected_intent": "market.query",
+      "expected_entities": { "symbol": "AAPL" },
+      "tags": ["行情", "美股", "代码"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-004",
+      "input": "000858 涨了没有",
+      "expected_intent": "market.query",
+      "expected_entities": { "symbol": "000858" },
+      "tags": ["行情", "涨跌", "A股"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-005",
+      "input": "腾讯控股的市盈率是多少",
+      "expected_intent": "market.query",
+      "expected_entities": { "symbol": "00700" },
+      "tags": ["行情", "PE", "港股"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "IC-006",
+      "input": "宁德时代 PB 多少",
+      "expected_intent": "market.query",
+      "expected_entities": { "symbol": "300750" },
+      "tags": ["行情", "PB", "创业板"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "IC-007",
+      "input": "搜一下茅台的新闻",
+      "expected_intent": "news.search",
+      "expected_entities": { "keyword": "茅台" },
+      "tags": ["新闻", "个股", "中文"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-008",
+      "input": "最近有什么白酒行业新闻",
+      "expected_intent": "news.search",
+      "expected_entities": { "keyword": "白酒" },
+      "tags": ["新闻", "行业", "中文"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-009",
+      "input": " Tesla 有什么最新消息",
+      "expected_intent": "news.search",
+      "expected_entities": { "keyword": "Tesla" },
+      "tags": ["新闻", "美股", "英文"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "IC-010",
+      "input": "回测一下趋势策略",
+      "expected_intent": "strategy.backtest",
+      "expected_entities": { "strategyName": "趋势策略" },
+      "tags": ["回测", "策略", "中文"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-011",
+      "input": "对茅台做个均线回测",
+      "expected_intent": "strategy.backtest",
+      "expected_entities": { "strategyName": "均线", "symbol": "600519" },
+      "tags": ["回测", "策略", "个股"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "IC-012",
+      "input": "茅台公司是做什么的",
+      "expected_intent": "stock.profile",
+      "expected_entities": { "symbol": "600519" },
+      "tags": ["档案", "基本面", "中文"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-013",
+      "input": "给我看看 AAPL 的公司简介",
+      "expected_intent": "stock.profile",
+      "expected_entities": { "symbol": "AAPL" },
+      "tags": ["档案", "基本面", "美股"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-014",
+      "input": "你好",
+      "expected_intent": "general.chat",
+      "expected_entities": {},
+      "tags": ["闲聊", "问候"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-015",
+      "input": "谢谢你的帮助",
+      "expected_intent": "general.chat",
+      "expected_entities": {},
+      "tags": ["闲聊", "礼貌"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-016",
+      "input": "有什么好的投资建议吗",
+      "expected_intent": "general.chat",
+      "expected_entities": {},
+      "tags": ["咨询", "投资", "模糊"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "IC-017",
+      "input": "今天大盘怎么样",
+      "expected_intent": "general.chat",
+      "expected_entities": {},
+      "tags": ["咨询", "大盘", "模糊"],
+      "difficulty": "medium"
+    },
+    {
+      "id": "IC-018",
+      "input": "新建一个对话",
+      "expected_intent": "session.manage",
+      "expected_entities": {},
+      "tags": ["Session", "新建"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-019",
+      "input": "把当前对话重命名为 茅台研究",
+      "expected_intent": "session.manage",
+      "expected_entities": {},
+      "tags": ["Session", "重命名"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-020",
+      "input": "我比较保守，不喜欢高风险",
+      "expected_intent": "preference.update",
+      "expected_entities": { "riskPreference": "保守" },
+      "tags": ["偏好", "风险偏好"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-021",
+      "input": "我关注新能源和白酒板块",
+      "expected_intent": "preference.update",
+      "expected_entities": { "focusSectors": ["新能源", "白酒"] },
+      "tags": ["偏好", "板块"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-022",
+      "input": "今天天气怎么样",
+      "expected_intent": "general.chat",
+      "expected_entities": {},
+      "tags": ["闲聊", "无关"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-023",
+      "input": "帮我点外卖",
+      "expected_intent": "unknown",
+      "expected_entities": {},
+      "tags": ["无关", "超出范围"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-024",
+      "input": "五粮液跌了还是涨了",
+      "expected_intent": "market.query",
+      "expected_entities": { "symbol": "000858" },
+      "tags": ["行情", "涨跌", "中文简称"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-025",
+      "input": "看看 Tesla 的成交量",
+      "expected_intent": "market.query",
+      "expected_entities": { "symbol": "TSLA" },
+      "tags": ["行情", "成交量", "美股"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-026",
+      "input": "搜索一下半导体行业的消息",
+      "expected_intent": "news.search",
+      "expected_entities": { "keyword": "半导体" },
+      "tags": ["新闻", "行业", "中文"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-027",
+      "input": "对五粮液用动量策略回测 2024 全年",
+      "expected_intent": "strategy.backtest",
+      "expected_entities": { "strategyName": "动量策略", "symbol": "000858", "startDate": "2024-01-01", "endDate": "2024-12-31" },
+      "tags": ["回测", "策略", "时间范围"],
+      "difficulty": "hard"
+    },
+    {
+      "id": "IC-028",
+      "input": "贵州茅台的档案给我看看",
+      "expected_intent": "stock.profile",
+      "expected_entities": { "symbol": "600519" },
+      "tags": ["档案", "全称", "中文"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-029",
+      "input": "删除当前会话",
+      "expected_intent": "session.manage",
+      "expected_entities": {},
+      "tags": ["Session", "删除"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-030",
+      "input": "我喜欢稳健型投资",
+      "expected_intent": "preference.update",
+      "expected_entities": { "riskPreference": "稳健" },
+      "tags": ["偏好", "风险偏好"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-031",
+      "input": "PE 是多少",
+      "expected_intent": "market.query",
+      "expected_entities": {},
+      "tags": ["行情", "PE", "上下文依赖"],
+      "difficulty": "hard"
+    },
+    {
+      "id": "IC-032",
+      "input": "它最近有什么新闻",
+      "expected_intent": "news.search",
+      "expected_entities": {},
+      "tags": ["新闻", "指代", "上下文依赖"],
+      "difficulty": "hard"
+    },
+    {
+      "id": "IC-033",
+      "input": "这个股票怎么样",
+      "expected_intent": "general.chat",
+      "expected_entities": {},
+      "tags": ["咨询", "模糊", "上下文依赖"],
+      "difficulty": "hard"
+    },
+    {
+      "id": "IC-034",
+      "input": "切换到最后一个对话",
+      "expected_intent": "session.manage",
+      "expected_entities": {},
+      "tags": ["Session", "切换"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "IC-035",
+      "input": "记住了，我经常问茅台",
+      "expected_intent": "preference.update",
+      "expected_entities": {},
+      "tags": ["偏好", "常问问题"],
+      "difficulty": "medium"
+    }
+  ]
+}

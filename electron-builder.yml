@@ -1,0 +1,23 @@
+appId: com.ainvest.agent
+productName: AInvest Agent
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+win:
+  target:
+    - nsis
+  icon: build/icon.png
+mac:
+  target:
+    - dmg
+  icon: build/icon.png
+linux:
+  target:
+    - AppImage
+  icon: build/icon.png
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

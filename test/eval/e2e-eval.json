@@ -1,0 +1,126 @@
+{
+  "version": "1.0",
+  "description": "端到端评测集 - 验证 Agent 完整链路",
+  "tests": [
+    {
+      "id": "E2E-001",
+      "input": "茅台今天多少钱",
+      "expected_intent": "market.query",
+      "expected_contains": ["茅台", "价格", "元"],
+      "expected_tool_called": "market.query",
+      "tags": ["行情", "端到端"]
+    },
+    {
+      "id": "E2E-002",
+      "input": "搜一下茅台的新闻",
+      "expected_intent": "news.search",
+      "expected_contains": ["新闻", "茅台"],
+      "expected_tool_called": "news.search",
+      "tags": ["新闻", "端到端"]
+    },
+    {
+      "id": "E2E-003",
+      "input": "回测一下茅台的趋势策略",
+      "expected_intent": "strategy.backtest",
+      "expected_contains": ["回测", "茅台", "收益率"],
+      "expected_tool_called": "strategy.backtest",
+      "tags": ["回测", "端到端"]
+    },
+    {
+      "id": "E2E-004",
+      "input": "茅台公司是做什么的",
+      "expected_intent": "stock.profile",
+      "expected_contains": ["茅台", "白酒", "简介"],
+      "expected_tool_called": "stock.profile",
+      "tags": ["档案", "端到端"]
+    },
+    {
+      "id": "E2E-005",
+      "input": "你好",
+      "expected_intent": "general.chat",
+      "expected_contains": [],
+      "expected_tool_called": null,
+      "tags": ["闲聊", "端到端"]
+    },
+    {
+      "id": "E2E-006",
+      "input": "五粮液涨了没有",
+      "expected_intent": "market.query",
+      "expected_contains": ["五粮液", "涨跌"],
+      "expected_tool_called": "market.query",
+      "tags": ["行情", "端到端"]
+    },
+    {
+      "id": "E2E-007",
+      "input": "最近有什么新能源的新闻",
+      "expected_intent": "news.search",
+      "expected_contains": ["新能源", "新闻"],
+      "expected_tool_called": "news.search",
+      "tags": ["新闻", "行业", "端到端"]
+    },
+    {
+      "id": "E2E-008",
+      "input": "AAPL 的市盈率",
+      "expected_intent": "market.query",
+      "expected_contains": ["AAPL", "PE"],
+      "expected_tool_called": "market.query",
+      "tags": ["行情", "美股", "端到端"]
+    },
+    {
+      "id": "E2E-009",
+      "input": "帮我看看贵州茅台的档案",
+      "expected_intent": "stock.profile",
+      "expected_contains": ["贵州茅台", "行业"],
+      "expected_tool_called": "stock.profile",
+      "tags": ["档案", "端到端"]
+    },
+    {
+      "id": "E2E-010",
+      "input": "对 Tesla 做 MACD 回测",
+      "expected_intent": "strategy.backtest",
+      "expected_contains": ["Tesla", "回测"],
+      "expected_tool_called": "strategy.backtest",
+      "tags": ["回测", "美股", "端到端"]
+    },
+    {
+      "id": "E2E-011",
+      "input": "有什么投资建议",
+      "expected_intent": "general.chat",
+      "expected_contains": [],
+      "expected_tool_called": null,
+      "tags": ["咨询", "模糊", "端到端"]
+    },
+    {
+      "id": "E2E-012",
+      "input": "今天大盘怎么样",
+      "expected_intent": "general.chat",
+      "expected_contains": [],
+      "expected_tool_called": null,
+      "tags": ["咨询", "大盘", "端到端"]
+    },
+    {
+      "id": "E2E-013",
+      "input": "新建对话",
+      "expected_intent": "session.manage",
+      "expected_contains": [],
+      "expected_tool_called": null,
+      "tags": ["Session", "端到端"]
+    },
+    {
+      "id": "E2E-014",
+      "input": "我比较激进",
+      "expected_intent": "preference.update",
+      "expected_contains": [],
+      "expected_tool_called": null,
+      "tags": ["偏好", "端到端"]
+    },
+    {
+      "id": "E2E-015",
+      "input": "帮我点外卖",
+      "expected_intent": "unknown",
+      "expected_contains": [],
+      "expected_tool_called": null,
+      "tags": ["无关", "端到端"]
+    }
+  ]
+}
