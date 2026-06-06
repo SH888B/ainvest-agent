@@ -8,6 +8,19 @@ import { STORAGE_KEYS } from '@shared/constants'
  * 负责 Session 的增删改查和当前 Session 切换
  */
 
+/**
+ * 根据第一条消息生成 Session 名称
+ * 按字符（Unicode code point）截取前 10 个字符
+ */
+export const generateSessionName = (firstMessage: string): string => {
+  const trimmed = firstMessage.trim().replace(/^[\s\p{P}]+|[\s\p{P}]+$/gu, '')
+  if (!trimmed) return '新对话'
+  const chars = Array.from(trimmed)
+  const maxLen = 10
+  if (chars.length <= maxLen) return trimmed
+  return chars.slice(0, maxLen).join('') + '...'
+}
+
 interface SessionState {
   sessions: Session[]
   currentSessionId: string | null
@@ -15,6 +28,7 @@ interface SessionState {
   createSession: () => string
   switchSession: (id: string) => void
   renameSession: (id: string, title: string) => void
+  autoRenameSession: (id: string, title: string) => void
   deleteSession: (id: string) => void
 }
 
@@ -53,7 +67,19 @@ export const useSessionStore = create<SessionState>()(
       renameSession: (id: string, title: string) => {
         set((state) => ({
           sessions: state.sessions.map((s) =>
-            s.id === id ? { ...s, title, updatedAt: new Date().toISOString() } : s
+            s.id === id
+              ? { ...s, title, updatedAt: new Date().toISOString(), isCustomNamed: true }
+              : s
+          ),
+        }))
+      },
+
+      autoRenameSession: (id: string, title: string) => {
+        set((state) => ({
+          sessions: state.sessions.map((s) =>
+            s.id === id && !s.isCustomNamed && s.title === '新对话'
+              ? { ...s, title, updatedAt: new Date().toISOString() }
+              : s
           ),
         }))
       },

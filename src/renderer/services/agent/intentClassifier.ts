@@ -1,6 +1,7 @@
 import { IntentResult, IntentType, LLMConfig } from '@shared/types'
 import { INTENT_TYPES } from '@shared/constants'
 import { logInfo, logDebug, logWarn } from '../logger/logger'
+import { buildIntentPrompt } from './prompts'
 
 /**
  * 意图识别器
@@ -176,22 +177,7 @@ export const classifyIntentLLM = async (
   text: string,
   config: LLMConfig
 ): Promise<IntentResult> => {
-  const prompt = `你是一个意图分类助手。请将用户输入分类到以下类型之一，并以 JSON 格式返回。
-
-可选类型：
-- market.query: 查询股票行情、价格、涨跌幅等
-- news.search: 搜索股票或行业新闻
-- strategy.backtest: 策略回测
-- stock.profile: 个股基本面档案
-- session.manage: 对话管理（新建/切换/删除）
-- preference.update: 更新用户偏好
-- general.chat: 闲聊、问候、投资咨询等
-- unknown: 无法识别
-
-要求返回格式（不要加 markdown 代码块标记）：
-{"intent": "类型", "confidence": 0.9}
-
-用户输入："${text}"`
+  const prompt = buildIntentPrompt(text)
 
   try {
     const response = await fetch(`${config.baseUrl}/chat/completions`, {

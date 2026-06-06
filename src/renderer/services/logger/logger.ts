@@ -9,9 +9,39 @@ import { LogEvent, LogFilter, LogLevel, AgentTurnLog } from '@shared/types/log'
 const STORAGE_KEY = 'ainvest:agent:logs'
 const MAX_LOGS = 500
 
+/** 敏感字段列表（命中时替换为 [REDACTED]） */
+const SENSITIVE_KEYS = ['apiKey', 'authorization', 'token', 'password', 'secret']
+
 /** 生成唯一 ID */
 const generateId = (): string =>
   `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 5)}`
+
+/** 过滤敏感字段 */
+const filterSensitiveData = (data: Record<string, unknown>): Record<string, unknown> => {
+  const filtered: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(data)) {
+    if (SENSITIVE_KEYS.some((sk) => key.toLowerCase().includes(sk))) {
+      filtered[key] = '[REDACTED]'
+    } else {
+      filtered[key] = value
+    }
+  }
+  return filtered
+}
+
+type LogCallback = (event: LogEvent) => void
+const subscribers: LogCallback[] = []
+
+/** 订阅日志事件，返回取消订阅函数 */
+export const subscribeLogs = (callback: LogCallback): (() => void) => {
+  subscribers.push(callback)
+  return () => {
+    const index = subscribers.indexOf(callback)
+    if (index > -1) {
+      subscribers.splice(index, 1)
+    }
+  }
+}
 
 /**
  * 从 localStorage 读取日志
@@ -42,6 +72,7 @@ const saveLogs = (logs: LogEvent[]): void => {
 export const logEvent = (event: Omit<LogEvent, 'id' | 'timestamp'>): void => {
   const fullEvent: LogEvent = {
     ...event,
+    data: filterSensitiveData(event.data),
     id: generateId(),
     timestamp: new Date().toISOString(),
   }
@@ -55,6 +86,12 @@ export const logEvent = (event: Omit<LogEvent, 'id' | 'timestamp'>): void => {
   }
 
   saveLogs(logs)
+
+  // 广播给订阅者（复制数组防止遍历期间被修改）
+  const currentSubscribers = [...subscribers]
+  for (const cb of currentSubscribers) {
+    cb(fullEvent)
+  }
 
   // 开发环境同时输出到 console
   if (import.meta.env.DEV) {
@@ -119,10 +156,15 @@ export const getLogs = (filter?: LogFilter): LogEvent[] => {
 }
 
 /**
- * 导出日志为 JSON
+ * 导出日志为 JSON（再次经过敏感字段过滤）
  */
 export const exportLogs = (): string => {
-  return JSON.stringify(loadLogs(), null, 2)
+  const logs = loadLogs()
+  const filteredLogs = logs.map((log) => ({
+    ...log,
+    data: filterSensitiveData(log.data),
+  }))
+  return JSON.stringify(filteredLogs, null, 2)
 }
 
 /**

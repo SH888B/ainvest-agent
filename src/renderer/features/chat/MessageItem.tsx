@@ -1,6 +1,7 @@
 import React from 'react'
 import { ChatMessage } from '@shared/types'
 import { User, Bot, Wrench } from 'lucide-react'
+import { ThinkingBlock } from './ThinkingBlock'
 
 interface MessageItemProps {
   message: ChatMessage
@@ -8,7 +9,7 @@ interface MessageItemProps {
 
 /**
  * 单条消息组件
- * 支持用户消息、Agent 消息、工具卡片
+ * 支持用户消息、Agent 消息、工具卡片、Thinking 块
  */
 export const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
   const isUser = message.role === 'user'
@@ -42,31 +43,39 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
         )}
       </div>
 
-      {/* 内容 */}
-      <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-          isUser
-            ? 'bg-primary text-white'
-            : 'bg-surface text-text border border-border'
-        }`}
-      >
-        <div className="whitespace-pre-wrap">{message.content}</div>
-
-        {/* 工具调用展示 */}
-        {isAssistant && message.tool_calls && message.tool_calls.length > 0 && (
-          <div className="mt-2 space-y-1">
-            {message.tool_calls.map((tc) => (
-              <div
-                key={tc.id}
-                className="flex items-center gap-2 rounded border border-border bg-background px-2 py-1 text-xs text-text-muted"
-              >
-                <Wrench className="h-3 w-3" />
-                <span className="font-medium">{tc.function.name}</span>
-                <span className="truncate">{tc.function.arguments}</span>
-              </div>
-            ))}
-          </div>
+      {/* 消息区：Thinking 块 + 内容气泡 */}
+      <div className="max-w-[80%]">
+        {/* Thinking 块（仅 Agent 消息） */}
+        {isAssistant && message.turnId && (
+          <ThinkingBlock turnId={message.turnId} />
         )}
+
+        {/* 内容气泡 */}
+        <div
+          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+            isUser
+              ? 'bg-primary text-white'
+              : 'bg-surface text-text border border-border'
+          }`}
+        >
+          <div className="whitespace-pre-wrap">{message.content}</div>
+
+          {/* 工具调用展示 */}
+          {isAssistant && message.tool_calls && message.tool_calls.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {message.tool_calls.map((tc) => (
+                <div
+                  key={tc.id}
+                  className="flex items-center gap-2 rounded border border-border bg-background px-2 py-1 text-xs text-text-muted"
+                >
+                  <Wrench className="h-3 w-3" />
+                  <span className="font-medium">{tc.function.name}</span>
+                  <span className="truncate">{tc.function.arguments}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

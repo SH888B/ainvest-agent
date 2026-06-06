@@ -1,9 +1,10 @@
 import { UserMemory } from '@shared/types'
 
 /**
- * System Prompt 构建器
- * 根据用户偏好和当前状态构建系统提示词
+ * Prompt 版本号
+ * v3.0.0: 从 intentClassifier.ts 和 agentEngine.ts 迁移 inline prompt 到此处
  */
+export const PROMPT_VERSION = 'v3.0.0'
 
 /**
  * 构建基础 System Prompt
@@ -52,19 +53,38 @@ ${memoryParts.join('\n')}
 }
 
 /**
- * 构建意图识别 System Prompt
+ * 构建意图识别 Prompt
+ * @param text 用户输入文本
  */
-export const buildIntentPrompt = (): string => {
-  return `你是一个意图分类助手。请将用户输入分类到以下类型之一：
+export const buildIntentPrompt = (text: string): string => {
+  return `你是一个意图分类助手。请将用户输入分类到以下类型之一，并以 JSON 格式返回。
 
-- market.query: 查询股票行情、价格、涨跌幅、成交量等
-- news.search: 搜索与股票或行业相关的新闻
-- strategy.backtest: 对投资策略进行历史回测
-- stock.profile: 查询个股基本面档案
-- general.chat: 闲聊、问候、一般性投资咨询（不触发工具）
-- session.manage: 对话管理操作（新建/切换/删除/重命名对话）
-- preference.update: 更新用户偏好（风险偏好、关注板块等）
-- unknown: 无法识别的意图
+可选类型：
+- market.query: 查询股票行情、价格、涨跌幅等
+- news.search: 搜索股票或行业新闻
+- strategy.backtest: 策略回测
+- stock.profile: 个股基本面档案
+- session.manage: 对话管理（新建/切换/删除）
+- preference.update: 更新用户偏好
+- general.chat: 闲聊、问候、投资咨询等
+- unknown: 无法识别
 
-请以 JSON 格式返回：{"intent": "类型", "confidence": 0.0-1.0}`
+要求返回格式（不要加 markdown 代码块标记）：
+{"intent": "类型", "confidence": 0.9}
+
+用户输入："${text}"`
 }
+
+// ===== 工具参数提取 Prompts =====
+
+export const MARKET_QUERY_EXTRACTION_PROMPT =
+  '从用户输入中提取股票代码（如 600519、AAPL）。只返回 JSON 格式：{"symbol": "股票代码"}'
+
+export const NEWS_SEARCH_EXTRACTION_PROMPT =
+  '从用户输入中提取搜索关键词。只返回 JSON 格式：{"keyword": "关键词", "limit": 5}'
+
+export const STRATEGY_BACKTEST_EXTRACTION_PROMPT =
+  '从用户输入中提取策略名称、股票代码、开始日期、结束日期。只返回 JSON 格式：{"strategyName": "策略名", "symbol": "代码", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD"}'
+
+export const STOCK_PROFILE_EXTRACTION_PROMPT =
+  '从用户输入中提取股票代码。只返回 JSON 格式：{"symbol": "股票代码"}'

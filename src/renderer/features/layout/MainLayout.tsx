@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
 import { useMemoryStore } from '../../stores/useMemoryStore'
 import { MarketPanel } from '../market/MarketPanel'
 import { ChatPanel } from '../chat/ChatPanel'
 import { SessionSidebar } from '../session/SessionSidebar'
+import { AgentLogPanel } from '../devtools/AgentLogPanel'
 
 /**
  * 三栏布局容器
@@ -10,10 +11,24 @@ import { SessionSidebar } from '../session/SessionSidebar'
  */
 const MainLayout: React.FC = () => {
   const { loadMemory } = useMemoryStore()
+  const [logPanelOpen, setLogPanelOpen] = useState(false)
 
   useEffect(() => {
     loadMemory()
   }, [loadMemory])
+
+  // 注册 DevTool 快捷键（仅开发环境）
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'L') {
+        e.preventDefault()
+        setLogPanelOpen((prev) => !prev)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
@@ -31,6 +46,11 @@ const MainLayout: React.FC = () => {
       <div className="w-[20%] min-w-[200px]">
         <SessionSidebar />
       </div>
+
+      {/* DevTool 日志面板（仅开发环境） */}
+      {import.meta.env.DEV && logPanelOpen && (
+        <AgentLogPanel onClose={() => setLogPanelOpen(false)} />
+      )}
     </div>
   )
 }

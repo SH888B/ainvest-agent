@@ -1,9 +1,16 @@
 import { ChatMessage, IntentType, LLMConfig, UserMemory } from '@shared/types'
 import { classifyIntent, classifyIntentLocal } from './intentClassifier'
-import { buildSystemPrompt } from './prompts'
+import {
+  buildSystemPrompt,
+  MARKET_QUERY_EXTRACTION_PROMPT,
+  NEWS_SEARCH_EXTRACTION_PROMPT,
+  STRATEGY_BACKTEST_EXTRACTION_PROMPT,
+  STOCK_PROFILE_EXTRACTION_PROMPT,
+} from './prompts'
 import { executeTool, hasTool } from '../tools/registry'
 import { streamChat } from '../llm/llmService'
 import { logInfo, logDebug, logError } from '../logger/logger'
+import { useThinkingStore } from '../../stores/useThinkingStore'
 import { MAX_CONTEXT_ROUNDS } from '@shared/constants'
 
 /**
@@ -37,6 +44,9 @@ export const runAgentTurn = async (
   const { onChunk, onToolCall, onToolResult, onError, onDone } = callbacks
   const startTime = Date.now()
   const turnId = `turn-${Date.now()}`
+  const { startTurn, addStep, completeStep, clearTurn } = useThinkingStore.getState()
+
+  startTurn(turnId)
 
   logInfo('agent', 'agent.turn.start', {
     turnId,
@@ -47,8 +57,16 @@ export const runAgentTurn = async (
 
   try {
     // 第一步：意图识别
+    addStep({ type: 'intent.recognizing', status: 'running', message: '正在理解您的问题...' })
     const intentResult = await classifyIntent(userInput, config)
     const intent = intentResult.intent
+    completeStep('intent.recognizing')
+    addStep({
+      type: 'intent.resolved',
+      status: 'completed',
+      message: `已识别意图：${intent}`,
+      detail: `置信度：${intentResult.confidence}`,
+    })
 
     logInfo('agent', 'agent.intent.resolved', {
       turnId,
@@ -62,6 +80,7 @@ export const runAgentTurn = async (
       logInfo('agent', 'agent.turn.skip', { turnId, reason: 'ui_operation', intent })
       onChunk(msg)
       onDone()
+      clearTurn()
       return
     }
 
@@ -83,12 +102,27 @@ export const runAgentTurn = async (
     if (hasTool(intent)) {
       logInfo('agent', 'agent.tool.detected', { turnId, intent })
 
+      addStep({ type: 'tool.extracting', status: 'running', message: '正在提取参数...' })
       const args = await extractToolArgs(userInput, intent, config)
+      completeStep('tool.extracting')
+      addStep({
+        type: 'tool.calling',
+        status: 'running',
+        message: `正在调用 ${intent}...`,
+        detail: JSON.stringify(args),
+      })
       logInfo('agent', 'agent.tool.args', { turnId, intent, args })
 
       onToolCall(intent, args)
 
       toolResultText = await executeTool(intent, args)
+      completeStep('tool.calling')
+      addStep({
+        type: 'tool.result',
+        status: 'completed',
+        message: '已获取工具结果',
+        detail: `结果长度：${toolResultText.length} 字`,
+      })
       logInfo('agent', 'agent.tool.result', {
         turnId,
         intent,
@@ -108,6 +142,7 @@ export const runAgentTurn = async (
     // 第五步：调用 LLM 生成回复
     let hasError = false
 
+    addStep({ type: 'llm.generating', status: 'running', message: '正在生成回复...' })
     logInfo('agent', 'agent.llm.request', {
       turnId,
       model: config.model,
@@ -126,6 +161,8 @@ export const runAgentTurn = async (
           onError(err)
         },
         onDone: () => {
+          completeStep('llm.generating')
+          addStep({ type: 'llm.streaming', status: 'completed', message: '回复已完成' })
           const latency = Date.now() - startTime
           logInfo('agent', 'agent.turn.end', {
             turnId,
@@ -134,14 +171,25 @@ export const runAgentTurn = async (
             latencyMs: latency,
           })
           onDone()
+          clearTurn()
         },
       }
     )
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
+    // 标记所有 running 步骤为失败
+    const { currentTurnId: activeTurnId, turns } = useThinkingStore.getState()
+    if (activeTurnId && turns[activeTurnId]) {
+      for (const step of turns[activeTurnId]) {
+        if (step.status === 'running') {
+          useThinkingStore.getState().failStep(step.type, msg)
+        }
+      }
+    }
     logError('agent', 'agent.turn.error', { turnId, error: msg })
     onError(msg)
     onDone()
+    clearTurn()
   }
 }
 
@@ -155,14 +203,10 @@ const extractToolArgs = async (
   config: LLMConfig
 ): Promise<Record<string, unknown>> => {
   const promptMap: Record<string, string> = {
-    'market.query':
-      '从用户输入中提取股票代码（如 600519、AAPL）。只返回 JSON 格式：{"symbol": "股票代码"}',
-    'news.search':
-      '从用户输入中提取搜索关键词。只返回 JSON 格式：{"keyword": "关键词", "limit": 5}',
-    'strategy.backtest':
-      '从用户输入中提取策略名称、股票代码、开始日期、结束日期。只返回 JSON 格式：{"strategyName": "策略名", "symbol": "代码", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD"}',
-    'stock.profile':
-      '从用户输入中提取股票代码。只返回 JSON 格式：{"symbol": "股票代码"}',
+    'market.query': MARKET_QUERY_EXTRACTION_PROMPT,
+    'news.search': NEWS_SEARCH_EXTRACTION_PROMPT,
+    'strategy.backtest': STRATEGY_BACKTEST_EXTRACTION_PROMPT,
+    'stock.profile': STOCK_PROFILE_EXTRACTION_PROMPT,
   }
 
   const prompt = promptMap[intent] || '从用户输入中提取相关参数，返回 JSON 格式'

@@ -11,6 +11,7 @@ export interface ChatMessage {
   content: string
   tool_calls?: ToolCall[]
   tool_call_id?: string
+  turnId?: string
 }
 
 /** 工具调用 */
@@ -53,6 +54,7 @@ export interface Session {
   title: string
   createdAt: string
   updatedAt: string
+  isCustomNamed?: boolean
 }
 
 /** 意图类型 */
