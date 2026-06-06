@@ -21,7 +21,14 @@
 - **允许修改**：`src/` 目录、`index.html`、`public/`、根目录配置文件（开发依赖相关）
 - **严禁修改**：`docs/prd/` PRD 文档、`docs/tech/` 技术文档、`test/` 测试代码（除非是自己写的测试辅助文件）
 - **代码规范**：
-  - TypeScript `strict: true`，**禁止 `any`**（除非必要并加注释说明）
+  - TypeScript `strict: true`，**禁止 `any`**（除非必要并加注释说明）；优先使用 `unknown` + 类型收窄
+  - 变量声明：只用 `const`/`let`，**禁用 `var`**
+  - 循环遍历：优先 `for...of`，**禁用 `Array.prototype.forEach`** 和 **`for...in` 遍历数组**
+  - 导出规范：**禁用 `default export`**，全部使用 `named export`；最小化导出面，不导出未使用的符号
+  - 类型定义：对象/类结构优先用 `interface`，联合类型/映射类型用 `type`
+  - 类型断言：使用 `as` 语法，**禁用尖括号 `<Type>expr`**
+  - 数组类型：简单元素用 `T[]`，复杂元素用 `Array<T>`
+  - 控制流：`switch` 语句**必须有 `default` 分支**，即使是空分支
   - 函数式组件 + Hooks，PascalCase 命名
   - Hooks 命名：`use[功能描述]`
   - 所有公共函数编写 JSDoc，复杂逻辑加中文注释
