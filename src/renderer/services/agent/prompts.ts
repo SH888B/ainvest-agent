@@ -4,7 +4,7 @@ import { UserMemory } from '@shared/types'
  * Prompt 版本号
  * v3.0.0: 从 intentClassifier.ts 和 agentEngine.ts 迁移 inline prompt 到此处
  */
-export const PROMPT_VERSION = 'v3.0.0'
+export const PROMPT_VERSION = 'v4.0.0'
 
 /**
  * 构建基础 System Prompt

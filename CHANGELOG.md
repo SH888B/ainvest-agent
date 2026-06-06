@@ -1,5 +1,29 @@
 # AInvest CLI Agent 更新日志
 
+## [4.0.0] - 2026-06-06
+
+### 新增功能
+
+- **行情看板总览升级**：左侧行情看板从简单卡片升级为投研仪表台，包含美股三大指数看板（道琼斯/纳斯达克/标普500）、全市场涨跌分布柱状图、行业板块涨幅/跌幅 Top 5
+- **港美股 Mock 数据扩充**：新增腾讯控股(0700.HK)、阿里巴巴(9988.HK)、英伟达(NVDA)的行情、档案和 30 日走势数据
+- **自选股覆盖多市场**：默认自选股更新为 AAPL / TSLA / 0700.HK / 9988.HK / NVDA
+- **个股走势图**：个股详情页下方新增 30 日收盘价面积图，随股票切换自动更新
+- **Session 消息持久化**：ChatStore 重构为 `messagesBySession` 结构并接入 `zustand/persist`，重启应用后对话记录完整保留
+- **Agent 回复 Markdown 渲染**：Agent 回复支持加粗、列表、代码块、引用、链接等 Markdown 语法，流式期间纯文本展示，完成后自动切换
+- **DevTool 显式开关**：聊天面板顶部新增扳手图标按钮（仅开发环境），可显式打开/关闭 Agent 日志看板
+- **三栏背景色差异化**：行情看板/聊天面板/Session 列表三栏使用不同背景色，增强空间层次感
+
+### 优化
+
+- **Prompt 统一收口**：所有 inline prompt 迁移到 `prompts.ts`，版本号 `PROMPT_VERSION = 'v4.0.0'`
+
+### 技术规范
+
+- TypeScript 编译零报错
+- ESLint 零错误
+- recharts 图表库引入（按需使用 LineChart/BarChart/AreaChart）
+- react-markdown 引入（Agent 回复富文本渲染）
+
 ## [3.0.0] - 2026-06-06
 
 ### 新增功能
