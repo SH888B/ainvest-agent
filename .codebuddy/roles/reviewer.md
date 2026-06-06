@@ -56,9 +56,9 @@ Reviewer 执行以下检查：
   1. 读取 PRD 对应章节，确认需求覆盖度
   2. 读取架构文档，确认技术规范符合度
   3. 逐文件审查变更（git diff 或文件对比）
-  4. 运行 TypeScript 编译检查
-  5. 运行 ESLint 检查
-  6. 检查关键逻辑分支和边界 case
+  4. 确认 PR 页面 GitHub Actions 全绿（取代手动跑 lint/tsc）
+  5. 检查关键逻辑分支和边界 case
+  6. 检查 Zustand selector 引用稳定性（禁止动态创建对象/数组）
     ↓
 Reviewer 输出 Review 报告，标记每个问题：
   - [BLOCKER] 阻塞性问题（必须修复，否则不能进入测试）
@@ -75,8 +75,9 @@ Reviewer 确认修复后，标记 Review 通过
 ### 3. Review 检查清单
 
 **通用检查项**：
-- [ ] TypeScript `strict: true` 无报错
-- [ ] ESLint 无错误（警告可接受但需评估）
+- [x] GitHub Actions CI 通过（PR 页面显示全绿）
+- [ ] 无新增 TypeScript 错误
+- [ ] 无新增 ESLint 错误
 - [ ] 无 `var` 声明，全部使用 `const`/`let`
 - [ ] 无 `any` 类型（除非必要并加注释说明）；优先使用 `unknown` + 类型收窄
 - [ ] 无 `default export`，全部使用 `named export`

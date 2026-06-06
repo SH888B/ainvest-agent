@@ -78,11 +78,9 @@ export const ChatPanel: React.FC = () => {
           appendAssistantContent(sessionId, content)
         },
         onToolCall: (toolName, args) => {
-          // eslint-disable-next-line no-console
           console.log(`[Agent] 工具调用: ${toolName}`, args)
         },
         onToolResult: (result) => {
-          // eslint-disable-next-line no-console
           console.log(`[Agent] 工具结果:`, result)
         },
         onError: (error) => {

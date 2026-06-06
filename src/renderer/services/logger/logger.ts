@@ -101,7 +101,6 @@ export const logEvent = (event: Omit<LogEvent, 'id' | 'timestamp'>): void => {
       warn: '#f59e0b',
       error: '#ef4444',
     }
-    // eslint-disable-next-line no-console
     console.log(
       `%c[${fullEvent.category}:${fullEvent.event}]`,
       `color: ${colorMap[fullEvent.level]}; font-weight: bold`,

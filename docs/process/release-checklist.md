@@ -52,11 +52,13 @@
 - [ ] 评测集通过率不低于基线
 - [ ] 核心功能回归测试通过
 
-### 3.5 代码提交
+### 3.5 自动化发布
 
-- [ ] 版本号更新和 CHANGELOG 编写作为独立 commit（或包含在最后一个功能 commit 中）
+- [ ] 运行 `node scripts/release.cjs [patch|minor|major]` 自动完成版本更新
+- [ ] 脚本输出确认：package.json、lock、CHANGELOG、PROMPT_VERSION 全部更新
 - [ ] commit message 包含版本号（如 `release: v4.0.0`）
 - [ ] 已打 git tag（如 `git tag v4.0.0`）
+- [ ] 手动执行 `git push origin main && git push origin v4.0.0`
 
 ---
 

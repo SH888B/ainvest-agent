@@ -4,7 +4,7 @@
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
-export type LogCategory = 'agent' | 'intent' | 'tool' | 'llm' | 'ui'
+export type LogCategory = 'agent' | 'intent' | 'tool' | 'llm' | 'ui' | 'memory'
 
 export interface LogEvent {
   /** 唯一事件 ID */

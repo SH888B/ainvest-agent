@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { usePreferenceStore } from '../../stores/usePreferenceStore'
 import { validateConfig } from '../../services/llm/llmService'
-import { AVAILABLE_MODELS, DEFAULT_TEMPERATURE } from '@shared/constants'
+import { AVAILABLE_MODELS } from '@shared/constants'
 import { Check, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
 /**

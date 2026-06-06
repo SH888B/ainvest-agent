@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react'
+import React, { useCallback, useRef } from 'react'
 import { QuickTools } from './QuickTools'
 import { QuickTool } from '@shared/constants/quickTools'
 import { Send } from 'lucide-react'

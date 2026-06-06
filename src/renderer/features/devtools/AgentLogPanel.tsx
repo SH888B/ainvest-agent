@@ -14,6 +14,7 @@ const CATEGORY_FILTERS: { key: LogCategory | 'all'; label: string; icon: React.R
   { key: 'tool', label: '工具', icon: <Wrench className="h-3 w-3" /> },
   { key: 'llm', label: 'LLM', icon: <Brain className="h-3 w-3" /> },
   { key: 'ui', label: 'UI', icon: <Monitor className="h-3 w-3" /> },
+  { key: 'memory', label: '记忆', icon: <Brain className="h-3 w-3" /> },
 ]
 
 const LEVEL_COLORS: Record<string, string> = {

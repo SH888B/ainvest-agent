@@ -15,6 +15,9 @@ registerTool(
     }
 
     const profile = mockStockProfile(symbol)
+    if (!profile) {
+      return `未找到股票 ${symbol} 的档案信息`
+    }
 
     return `【公司档案】
 名称：${profile.name}

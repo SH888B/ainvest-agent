@@ -73,7 +73,7 @@ export const StockChart: React.FC<StockChartProps> = ({ symbol, isUp }) => {
                 borderRadius: '6px',
                 fontSize: '12px',
               }}
-              formatter={(value: number) => [value.toFixed(2), '收盘价']}
+              formatter={(value) => [`${Number(value).toFixed(2)}`, '收盘价']}
             />
             <Area
               type="monotone"

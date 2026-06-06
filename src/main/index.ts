@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
-import os from 'os'
 
 /**
  * Electron 主进程入口

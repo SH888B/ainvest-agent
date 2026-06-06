@@ -47,7 +47,7 @@ const createDefaultSession = (): Session => {
 
 export const useSessionStore = create<SessionState>()(
   persist(
-    (set, get) => ({
+    (set, _get) => ({
       sessions: [],
       currentSessionId: null,
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { getAllMarketData, mockMarketQuery } from '../../services/mocks'
+import { mockMarketQuery } from '../../services/mocks'
 import { Plus, X, TrendingUp, TrendingDown } from 'lucide-react'
 
 interface WatchListProps {

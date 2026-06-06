@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import { useChatStore } from '../../stores/useChatStore'
 import { useSessionStore } from '../../stores/useSessionStore'
 import { MessageItem } from './MessageItem'
@@ -11,7 +11,10 @@ import { Bot } from 'lucide-react'
 export const MessageList: React.FC = () => {
   const { currentSessionId } = useSessionStore()
   const { getMessages, isLoading } = useChatStore()
-  const messages = currentSessionId ? getMessages(currentSessionId) : []
+  const messages = useMemo(
+    () => (currentSessionId ? getMessages(currentSessionId) : []),
+    [currentSessionId, getMessages]
+  )
   const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
