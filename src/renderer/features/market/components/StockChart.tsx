@@ -39,7 +39,7 @@ export const StockChart: React.FC<StockChartProps> = ({ symbol, isUp }) => {
     }
   }, [symbol])
 
-  const color = isUp ? '#22c55e' : '#ef4444'
+  const color = isUp ? '#10b981' : '#f43f5e'
 
   if (data.length === 0) {
     return (

@@ -51,9 +51,9 @@ export const MarketDistributionChart: React.FC<MarketDistributionChartProps> = (
                   key={`cell-${index}`}
                   fill={
                     entry.type === 'up'
-                      ? '#22c55e'
+                      ? '#10b981'
                       : entry.type === 'down'
-                        ? '#ef4444'
+                        ? '#f43f5e'
                         : '#6b7280'
                   }
                 />

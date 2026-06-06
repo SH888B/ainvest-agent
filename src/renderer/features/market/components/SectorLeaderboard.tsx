@@ -27,7 +27,7 @@ export const SectorLeaderboard: React.FC<SectorLeaderboardProps> = ({
           {topGainers.map((sector) => (
             <div
               key={sector.name}
-              className="flex items-center justify-between rounded bg-surface px-2 py-1.5"
+              className="flex items-center justify-between rounded bg-surface px-2 py-1.5 hover:bg-surface-hover transition-colors duration-150"
             >
               <span className="text-xs text-text">{sector.name}</span>
               <span className="flex items-center text-xs font-mono text-success">
@@ -44,7 +44,7 @@ export const SectorLeaderboard: React.FC<SectorLeaderboardProps> = ({
           {topLosers.map((sector) => (
             <div
               key={sector.name}
-              className="flex items-center justify-between rounded bg-surface px-2 py-1.5"
+              className="flex items-center justify-between rounded bg-surface px-2 py-1.5 hover:bg-surface-hover transition-colors duration-150"
             >
               <span className="text-xs text-text">{sector.name}</span>
               <span className="flex items-center text-xs font-mono text-danger">

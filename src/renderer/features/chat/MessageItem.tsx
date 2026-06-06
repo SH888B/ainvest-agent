@@ -57,7 +57,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, isStreaming }
           className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
             isUser
               ? 'bg-primary text-white'
-              : 'border border-border bg-surface text-text'
+              : 'bg-surface/80 backdrop-blur-sm border border-border-subtle text-text'
           }`}
         >
           {isUser ? (

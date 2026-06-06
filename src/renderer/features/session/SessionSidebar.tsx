@@ -94,7 +94,7 @@ export const SessionSidebar: React.FC = () => {
         <h2 className="text-sm font-semibold text-text">对话历史</h2>
         <button
           onClick={createSession}
-          className="flex items-center rounded p-1 text-text-muted hover:bg-surface-hover hover:text-text"
+          className="flex items-center rounded p-1 text-text-secondary hover:bg-surface-hover hover:text-text transition-colors duration-150"
           title="新建对话"
         >
           <Plus className="h-4 w-4" />
@@ -147,7 +147,7 @@ export const SessionSidebar: React.FC = () => {
         <button
           onClick={handleSummarizePreference}
           disabled={summarizing}
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs text-text-muted transition-colors hover:bg-surface-hover hover:text-text disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-surface/80 backdrop-blur-sm border border-border-subtle px-3 py-2 text-xs text-text-secondary hover:bg-surface-hover hover:border-border hover:text-text transition-all duration-150 disabled:opacity-50"
         >
           {summarizing ? (
             <Loader2 className="h-3 w-3 animate-spin" />

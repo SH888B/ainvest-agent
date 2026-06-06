@@ -21,20 +21,38 @@
     @apply h-full w-full;
   }
 
+  /* 滚动条 - 极细、深色、与背景融合 */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: theme('colors.surface.elevated') transparent;
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-transparent;
+    background: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-border;
+    background-color: theme('colors.surface.elevated');
+    border-radius: 3px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-text-muted;
+    background-color: theme('colors.border.DEFAULT');
+  }
+
+  /* 文本选中态 */
+  ::selection {
+    background-color: theme('colors.primary.DEFAULT / 30%');
+    color: theme('colors.text.DEFAULT');
+  }
+
+  /* 基础过渡 - 颜色属性默认 150ms */
+  * {
+    @apply transition-colors duration-150;
   }
 }

@@ -8,20 +8,31 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0f1117',
-        surface: '#1a1d27',
-        'surface-hover': '#232633',
-        border: '#2a2e3b',
-        primary: '#3b82f6',
-        'primary-hover': '#2563eb',
-        text: '#e2e8f0',
-        'text-muted': '#94a3b8',
-        success: '#22c55e',
+        background: '#030712',
+        surface: {
+          DEFAULT: '#111827',
+          elevated: '#1a2236',
+          hover: '#1e293b',
+        },
+        border: {
+          DEFAULT: '#1e293b',
+          subtle: '#172033',
+        },
+        primary: {
+          DEFAULT: '#2563eb',
+          hover: '#1d4ed8',
+        },
+        text: {
+          DEFAULT: '#f1f5f9',
+          secondary: '#94a3b8',
+          muted: '#64748b',
+        },
+        success: '#10b981',
         warning: '#f59e0b',
-        danger: '#ef4444',
-        'panel-left': '#0c0e14',
-        'panel-center': '#0f1117',
-        'panel-right': '#12141c',
+        danger: '#f43f5e',
+        'panel-left': '#080d1a',
+        'panel-center': '#0B1120',
+        'panel-right': '#0e1526',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
