@@ -1,6 +1,6 @@
 {
   "name": "ainvest-electron",
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "AInvest CLI Agent Desktop App v4",
   "main": "./out/main/index.js",
   "author": "AInvest Team",

@@ -1,5 +1,20 @@
 # AInvest CLI Agent 更新日志
 
+## [4.1.1] - 2026-06-07
+
+### 修复
+
+- **基线错误清零**：修复 5 个 ESLint 未使用变量错误 + 8 个 TypeScript 类型错误，src/ 目录实现 lint/tsc 零报错
+- **stock.ts 空值守卫**：`mockStockProfile` 可能返回 null 时添加守卫，防止运行时异常
+- **Tooltip formatter 类型安全**：`StockChart` 的 recharts Tooltip formatter 改为安全类型转换
+
+### 工程改进
+
+- **GitHub Actions CI**：新增 `.github/workflows/ci.yml`，push/PR 时自动跑 lint + tsc，PR 不通过禁止合并
+- **release.cjs 自动化发布**：新增 `scripts/release.cjs`，一键完成版本号 bump → CHANGELOG 日期更新 → package-lock 同步 → commit → tag
+- **角色规范更新**：`developer.md` / `reviewer.md` / `release-checklist.md` 同步更新，Reviewer 不再需要手动跑 lint/tsc
+- **LogCategory 扩展**：日志分类新增 `'memory'`，匹配 useMemoryStore 实际使用场景
+
 ## [4.1.0] - 2026-06-07
 
 ### 新增功能
