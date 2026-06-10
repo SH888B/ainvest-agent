@@ -119,6 +119,28 @@ const LOCAL_RULES: Array<{
     confidence: 0.9,
   },
 
+  // ===== shell.execute：执行本地命令 =====
+  {
+    pattern: /(运行|执行|调用|跑|跑一下|执行一下|帮我).{0,5}(python|node|npm|git|curl|pip|conda|java|go|bash|sh|zsh|rm|mkdir|cp|mv|chmod|echo|cat|ls|pwd|which|whoami)/i,
+    intent: 'shell.execute',
+    confidence: 0.9,
+  },
+  {
+    pattern: /(python|node|npm|git|curl|pip|conda|java|go|bash|sh|rm|mkdir|cp|mv).{0,5}(运行|执行|调用|跑|脚本)/i,
+    intent: 'shell.execute',
+    confidence: 0.9,
+  },
+  {
+    pattern: /(查看|列出|显示|查一下).{0,5}(文件|目录|文件夹|workspace)/i,
+    intent: 'shell.execute',
+    confidence: 0.85,
+  },
+  {
+    pattern: /^(ls|dir|cat|type|grep|find|rm|mkdir|cp|mv|python|node|npm|git|curl|echo|bash|sh)\s+/i,
+    intent: 'shell.execute',
+    confidence: 0.85,
+  },
+
   // ===== preference.update：偏好更新 =====
   {
     pattern: /(风险偏好|风险|偏好|关注板块|关注|我喜欢|我不喜欢|记住|记住我)/,

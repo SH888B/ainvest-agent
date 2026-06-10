@@ -1,5 +1,56 @@
 # AInvest CLI Agent 更新日志
 
+## [5.1.1] - 2026-06-11
+
+### 修复
+
+- **Vectra 主进程迁移**：将向量数据库从渲染进程迁移到主进程，通过 8 个 IPC 通道（`memory:*`）通信，解决渲染进程无法使用 `fs.rm` 的问题
+- **IPC 参数校验**：8 个 `memory:*` IPC handler 增加参数类型验证，防止空/非法参数导致主进程崩溃
+- **deleteItem 互斥锁**：`vectorStore.ts` 的 `deleteItem` 方法补充 Mutex 保护，防止并发写入损坏 Vectra 索引
+- **LLM 空回复处理**：增加 `finishReason`/`model`/`usage` 诊断日志；`max_tokens` 从 800 提升至 1500
+- **截断代码块解析**：`finishReason: "length"` 时，新增正则策略处理未闭合的 markdown 代码块并自动补全 `]`
+- **Fallback 多片段提取**：关键词回退策略从单片段改为多片段，覆盖所有用户消息而非仅最后一条
+- **focusSectors 未填充**：板块关键词搜索改为使用 `allContents`（所有片段），修复 `market` 类别片段中的板块词无法识别的问题
+- **记忆主动推断**：System Prompt 从被动参考改为主动推断指代（如"那家电池公司" → 宁德时代）
+- **shell.execute 意图识别**：正则从 5 个命令扩展到 17+（新增 `rm`/`bash`/`pip`/`conda` 等），增加"帮我"前缀匹配
+- **Agent 拒绝执行 Shell**：System Prompt 新增第 5 项能力（执行本地命令），解决 LLM 拒绝执行 shell 请求
+- **logWarn 缺失导入**：`memoryArchive.ts` 补充 `logWarn` 导入
+- **IPC 代理层重构**：渲染进程 `vectorStore.ts` 改为纯 IPC 代理，移除 `vectra` 直接依赖
+
+### 新增
+
+- `src/main/services/vectorStore.ts`：主进程 Vectra 服务（含 Mutex）
+- `src/main/ipcHandlers/memory.ts`：8 个 IPC handler 注册
+- `src/preload/index.ts`：`MemoryAPI` 接口 + `memoryAPI` 暴露
+- `test/v5.1.1-ipc-proxy.test.mjs`：52 个测试用例覆盖 IPC 代理层
+
+### 已知问题（v6.0 迭代修复）
+
+1. 新建 Session 按钮点击后无反应，多次点击后延迟批量创建（debounce/async 竞态）
+2. 流式输出完成后界面卡住，切换 Session 再切回才正常（React 状态更新未触发 re-render）
+3. 连续多轮对话后新消息不显示，切换 Session 再切回才正常（debounced storage 状态不同步）
+
+## [5.1.0] - 2026-06-10
+
+### 新增功能
+
+- **Embedding API 接入**：使用智谱 AI Embedding-3 API（512 维）替代本地 transformers.js，解决 WASM/ONNX 兼容性问题
+- **记忆归档流程**：对话结束后自动提取记忆片段 → embedding → 去重合并 → 存入 Vectra
+- **偏好提炼增强**：支持 10+ 种风险偏好变体映射，关键词回退提取策略
+- **语义记忆注入**：System Prompt 注入相关记忆，Agent 可主动推断用户指代
+
+## [5.0.0] - 2026-06-09
+
+### 新增功能
+
+- **大模型配置**：支持 Kimi API Key、模型选择、Temperature 配置
+- **LLM 驱动对话**：流式生成自然语言回复，3s 内开始输出
+- **意图识别双层策略**：LLM 为主 + 本地正则兜底，8 种意图类型
+- **短期记忆**：Session 内保留最近 10 轮对话上下文
+- **长期记忆**：偏好持久化到 `memory.json`，向量记忆存入 Vectra
+- **Function Calling 工具调用**：LLM 决定调用时机和参数
+- **降级策略**：LLM 失败时本地正则兜底
+
 ## [4.1.1] - 2026-06-07
 
 ### 修复

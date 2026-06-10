@@ -1,11 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { LogEvent, LogCategory } from '@shared/types/log'
 import { subscribeLogs, getLogs, exportLogs } from '../../services/logger/logger'
-import { X, Download, Bug, Activity, Wrench, Brain, Monitor } from 'lucide-react'
+import { MemoryDebugPanel } from './MemoryDebugPanel'
+import { X, Download, Bug, Activity, Wrench, Brain, Monitor, Database } from 'lucide-react'
 
 interface AgentLogPanelProps {
   onClose: () => void
 }
+
+type TabKey = 'logs' | 'memory'
 
 const CATEGORY_FILTERS: { key: LogCategory | 'all'; label: string; icon: React.ReactNode }[] = [
   { key: 'all', label: '全部', icon: <Activity className="h-3 w-3" /> },
@@ -24,15 +27,34 @@ const LEVEL_COLORS: Record<string, string> = {
   error: 'text-red-400',
 }
 
+const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
+  { key: 'logs', label: '日志', icon: <Activity className="h-3 w-3" /> },
+  { key: 'memory', label: '向量记忆', icon: <Database className="h-3 w-3" /> },
+]
+
 /**
  * Agent 日志面板
- * 右侧滑出，展示日志事件时间线
+ * 右侧滑出，展示日志事件时间线 和 向量记忆调试页
  * 仅开发环境可用
  */
 export const AgentLogPanel: React.FC<AgentLogPanelProps> = ({ onClose }) => {
+  const [activeTab, setActiveTab] = useState<TabKey>('logs')
   const [logs, setLogs] = useState<LogEvent[]>([])
   const [filter, setFilter] = useState<LogCategory | 'all'>('all')
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   // 初始加载日志
   useEffect(() => {
@@ -97,15 +119,17 @@ export const AgentLogPanel: React.FC<AgentLogPanelProps> = ({ onClose }) => {
     <div className="fixed right-0 top-0 z-50 flex h-screen w-[480px] flex-col border-l border-border bg-background/95 backdrop-blur-sm shadow-2xl">
       {/* 头部 */}
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold text-text">Agent 日志</h3>
+        <h3 className="text-sm font-semibold text-text">DevTools</h3>
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleExport}
-            className="rounded p-1 text-text-muted hover:text-text"
-            title="导出 JSON"
-          >
-            <Download className="h-4 w-4" />
-          </button>
+          {activeTab === 'logs' && (
+            <button
+              onClick={handleExport}
+              className="rounded p-1 text-text-muted hover:text-text"
+              title="导出 JSON"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={onClose}
             className="rounded p-1 text-text-muted hover:text-text"
@@ -116,64 +140,103 @@ export const AgentLogPanel: React.FC<AgentLogPanelProps> = ({ onClose }) => {
         </div>
       </div>
 
-      {/* 过滤标签 */}
+      {/* Tab 切换 */}
       <div className="flex gap-1 border-b border-border px-4 py-2">
-        {CATEGORY_FILTERS.map((cf) => (
+        {TABS.map((tab) => (
           <button
-            key={cf.key}
-            onClick={() => setFilter(cf.key)}
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${
-              filter === cf.key
+              activeTab === tab.key
                 ? 'bg-primary text-white'
                 : 'text-text-muted hover:bg-surface'
             }`}
           >
-            {cf.icon}
-            {cf.label}
+            {tab.icon}
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {/* 日志列表 */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 text-xs">
-        {groups.length === 0 && (
-          <div className="text-center text-text-muted">暂无日志</div>
-        )}
-        {groups.map((group, gi) => (
-          <div key={gi} className="mb-3">
-            {group.turnId && (
-              <div className="mb-1 rounded bg-surface px-2 py-1 text-text-muted">
-                Turn: {group.turnId}
-              </div>
-            )}
-            <div className="space-y-1">
-              {group.logs.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex items-start gap-2 rounded px-2 py-1 hover:bg-surface/50"
-                >
-                  <span className="shrink-0 text-text-muted">
-                    {new Date(log.timestamp).toLocaleTimeString()}
-                  </span>
-                  <span className={`shrink-0 ${LEVEL_COLORS[log.level] || 'text-text'}`}>
-                    {log.level}
-                  </span>
-                  <span className="shrink-0 text-text-muted">{log.category}</span>
-                  <span className="shrink-0 font-medium text-text">{log.event}</span>
-                  <span className="truncate text-text-muted">
-                    {JSON.stringify(log.data).slice(0, 120)}
-                  </span>
-                </div>
-              ))}
-            </div>
+      {/* 日志面板 */}
+      {activeTab === 'logs' && (
+        <>
+          {/* 过滤标签 */}
+          <div className="flex gap-1 border-b border-border px-4 py-2">
+            {CATEGORY_FILTERS.map((cf) => (
+              <button
+                key={cf.key}
+                onClick={() => setFilter(cf.key)}
+                className={`flex items-center gap-1 rounded px-2 py-1 text-xs ${
+                  filter === cf.key
+                    ? 'bg-primary text-white'
+                    : 'text-text-muted hover:bg-surface'
+                }`}
+              >
+                {cf.icon}
+                {cf.label}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* 底部统计 */}
-      <div className="border-t border-border px-4 py-2 text-xs text-text-muted">
-        共 {filteredLogs.length} 条日志
-      </div>
+          {/* 日志列表 */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 text-xs">
+            {groups.length === 0 && (
+              <div className="text-center text-text-muted">暂无日志</div>
+            )}
+            {groups.map((group, gi) => (
+              <div key={gi} className="mb-3">
+                {group.turnId && (
+                  <div className="mb-1 rounded bg-surface px-2 py-1 text-text-muted">
+                    Turn: {group.turnId}
+                  </div>
+                )}
+                <div className="space-y-1">
+                  {group.logs.map((log) => {
+                    const isExpanded = expandedIds.has(log.id)
+                    return (
+                      <div
+                        key={log.id}
+                        onClick={() => toggleExpand(log.id)}
+                        className="cursor-pointer rounded px-2 py-1 hover:bg-surface/50"
+                      >
+                        <div className="flex items-start gap-2">
+                          <span className="shrink-0 text-text-muted">
+                            {new Date(log.timestamp).toLocaleTimeString()}
+                          </span>
+                          <span className={`shrink-0 ${LEVEL_COLORS[log.level] || 'text-text'}`}>
+                            {log.level}
+                          </span>
+                          <span className="shrink-0 text-text-muted">{log.category}</span>
+                          <span className="shrink-0 font-medium text-text">{log.event}</span>
+                          <span className={`text-text-muted ${isExpanded ? '' : 'truncate'}`}>
+                            {isExpanded
+                              ? JSON.stringify(log.data, null, 2)
+                              : JSON.stringify(log.data).slice(0, 120)}
+                          </span>
+                        </div>
+                        {!isExpanded && JSON.stringify(log.data).length > 120 && (
+                          <div className="mt-0.5 pl-[120px] text-[10px] text-text-muted/60">
+                            点击展开完整日志
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 底部统计 */}
+          <div className="border-t border-border px-4 py-2 text-xs text-text-muted">
+            共 {filteredLogs.length} 条日志
+          </div>
+        </>
+      )}
+
+      {/* 向量记忆调试面板 */}
+      {activeTab === 'memory' && <MemoryDebugPanel />}
     </div>
   )
 }

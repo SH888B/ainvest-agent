@@ -1,15 +1,17 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { useSessionStore } from '../../stores/useSessionStore'
 import { useChatStore } from '../../stores/useChatStore'
 import { usePreferenceStore } from '../../stores/usePreferenceStore'
 import { useMemoryStore } from '../../stores/useMemoryStore'
-import { extractMemoryFromDialogue, mergeMemory } from '../../services/memory/memoryService'
+import { archiveSession } from '../../services/memory/memoryArchive'
+import { mergeMemory } from '../../services/memory/memoryService'
 import { SessionItem } from './SessionItem'
-import { Plus, Sparkles, Loader2 } from 'lucide-react'
+import { Plus, Archive, Loader2, CheckCircle } from 'lucide-react'
 
 /**
  * Session 侧边栏
- * 展示 Session 列表、新建按钮、总结偏好按钮
+ * 展示 Session 列表、新建按钮、归档按钮
+ * v5: 新增自动归档 + 手动归档功能
  */
 interface Notification {
   type: 'success' | 'error' | 'info'
@@ -17,14 +19,21 @@ interface Notification {
 }
 
 export const SessionSidebar: React.FC = () => {
-  const { sessions, currentSessionId, createSession, switchSession, renameSession, deleteSession } =
-    useSessionStore()
+  const {
+    sessions,
+    currentSessionId,
+    createSession,
+    switchSession,
+    renameSession,
+    deleteSession,
+    updateArchivedCount,
+  } = useSessionStore()
   const { getMessages, clearMessages } = useChatStore()
   const { llmConfig, isConfigValid } = usePreferenceStore()
   const { memory, updateMemory, saveMemory } = useMemoryStore()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
-  const [summarizing, setSummarizing] = useState(false)
+  const [archiving, setArchiving] = useState(false)
   const [notification, setNotification] = useState<Notification | null>(null)
 
   const handleStartRename = (id: string, currentTitle: string) => {
@@ -42,11 +51,22 @@ export const SessionSidebar: React.FC = () => {
 
   const showNotification = (type: Notification['type'], message: string) => {
     setNotification({ type, message })
-    // 3 秒后自动清除
     setTimeout(() => setNotification(null), 3000)
   }
 
-  const handleSummarizePreference = async () => {
+  /** 获取当前 Session 未归档消息数 */
+  const getUnarchivedCount = useCallback(
+    (sessionId: string): number => {
+      const messages = getMessages(sessionId)
+      const session = sessions.find((s) => s.id === sessionId)
+      const archived = session?.archivedMessageCount || 0
+      return Math.max(0, messages.length - archived)
+    },
+    [getMessages, sessions]
+  )
+
+  /** 归档当前 Session */
+  const handleArchiveCurrent = async () => {
     if (!currentSessionId) {
       showNotification('error', '请先选择一个对话 Session')
       return
@@ -54,38 +74,81 @@ export const SessionSidebar: React.FC = () => {
 
     const messages = getMessages(currentSessionId)
     if (messages.length === 0) {
-      showNotification('info', '当前 Session 没有对话内容，无法提炼偏好')
+      showNotification('info', '当前 Session 没有对话内容')
+      return
+    }
+
+    const session = sessions.find((s) => s.id === currentSessionId)
+    const archivedCount = session?.archivedMessageCount || 0
+
+    if (messages.length <= archivedCount) {
+      showNotification('info', '当前 Session 已完全归档')
       return
     }
 
     if (!isConfigValid) {
-      showNotification('error', '尚未配置大模型，无法提炼偏好')
+      showNotification('error', '尚未配置大模型，无法归档')
       return
     }
 
-    setSummarizing(true)
+    setArchiving(true)
     try {
-      const extracted = await extractMemoryFromDialogue(messages, llmConfig)
-      const merged = mergeMemory(memory, extracted)
-      updateMemory(merged)
-      await saveMemory()
+      const result = await archiveSession({
+        sessionId: currentSessionId,
+        messages,
+        archivedMessageCount: archivedCount,
+        llmConfig,
+      })
 
-      const parts: string[] = []
-      if (merged.riskPreference) parts.push(`风险偏好：${merged.riskPreference}`)
-      if (merged.focusSectors && merged.focusSectors.length > 0) parts.push(`关注板块：${merged.focusSectors.join('、')}`)
-      if (merged.summary) parts.push(`摘要：${merged.summary}`)
+      // 更新归档计数
+      updateArchivedCount(currentSessionId, messages.length)
 
-      if (parts.length === 0) {
-        showNotification('info', '对话中暂未发现明确的偏好信息，多聊几句再试试吧')
-      } else {
-        showNotification('success', `偏好提炼完成：${parts.join('；')}`)
+      // 显式偏好双轨更新
+      if (Object.keys(result.preferenceUpdate).length > 0) {
+        const merged = mergeMemory(memory, result.preferenceUpdate as typeof memory)
+        updateMemory(merged)
+        await saveMemory()
       }
+
+      showNotification(
+        'success',
+        `归档完成：提取 ${result.newFragments} 条记忆，写入 ${result.vectorRecords} 条向量${result.skippedDuplicates > 0 ? `，跳过 ${result.skippedDuplicates} 条重复` : ''}`
+      )
     } catch (err) {
-      showNotification('error', `提炼失败：${err instanceof Error ? err.message : String(err)}`)
+      showNotification('error', `归档失败：${err instanceof Error ? err.message : String(err)}`)
     } finally {
-      setSummarizing(false)
+      setArchiving(false)
     }
   }
+
+  /** 新建 Session（自动归档上一个） */
+  const handleCreateSession = async () => {
+    // 如果有当前 Session，先自动归档
+    if (currentSessionId && isConfigValid) {
+      const messages = getMessages(currentSessionId)
+      const session = sessions.find((s) => s.id === currentSessionId)
+      const archivedCount = session?.archivedMessageCount || 0
+
+      if (messages.length > archivedCount) {
+        try {
+          await archiveSession({
+            sessionId: currentSessionId,
+            messages,
+            archivedMessageCount: archivedCount,
+            llmConfig,
+          })
+          updateArchivedCount(currentSessionId, messages.length)
+        } catch (err) {
+          console.error('[SessionSidebar] 自动归档失败:', err)
+        }
+      }
+    }
+
+    createSession()
+  }
+
+  const currentUnarchived = currentSessionId ? getUnarchivedCount(currentSessionId) : 0
+  const isCurrentFullyArchived = currentUnarchived === 0
 
   return (
     <div className="flex h-full flex-col">
@@ -93,7 +156,7 @@ export const SessionSidebar: React.FC = () => {
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold text-text">对话历史</h2>
         <button
-          onClick={createSession}
+          onClick={handleCreateSession}
           className="flex items-center rounded p-1 text-text-secondary hover:bg-surface-hover hover:text-text transition-colors duration-150"
           title="新建对话"
         >
@@ -129,7 +192,7 @@ export const SessionSidebar: React.FC = () => {
         )}
       </div>
 
-      {/* 底部：总结今日偏好按钮 + 通知 */}
+      {/* 底部：归档按钮 + 通知 */}
       <div className="border-t border-border p-3 space-y-2">
         {notification && (
           <div
@@ -144,17 +207,31 @@ export const SessionSidebar: React.FC = () => {
             {notification.message}
           </div>
         )}
+
+        {/* 未归档消息数提示 */}
+        {currentSessionId && currentUnarchived > 0 && (
+          <div className="text-center text-xs text-text-muted">
+            未归档消息: {currentUnarchived} 条
+          </div>
+        )}
+
         <button
-          onClick={handleSummarizePreference}
-          disabled={summarizing}
+          onClick={handleArchiveCurrent}
+          disabled={archiving || !currentSessionId || isCurrentFullyArchived}
           className="flex w-full items-center justify-center gap-2 rounded-lg bg-surface/80 backdrop-blur-sm border border-border-subtle px-3 py-2 text-xs text-text-secondary hover:bg-surface-hover hover:border-border hover:text-text transition-all duration-150 disabled:opacity-50"
         >
-          {summarizing ? (
+          {archiving ? (
             <Loader2 className="h-3 w-3 animate-spin" />
+          ) : isCurrentFullyArchived ? (
+            <CheckCircle className="h-3 w-3 text-green-400" />
           ) : (
-            <Sparkles className="h-3 w-3" />
+            <Archive className="h-3 w-3" />
           )}
-          {summarizing ? '提炼中...' : '总结今日偏好'}
+          {archiving
+            ? '归档中...'
+            : isCurrentFullyArchived
+              ? '已归档'
+              : '归档当前会话'}
         </button>
       </div>
     </div>

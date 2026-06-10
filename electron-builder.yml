@@ -8,16 +8,19 @@ files:
   - package.json
 win:
   target:
-    - nsis
-  icon: build/icon.png
+    - target: nsis
+      arch:
+        - x64
+  # NOTE: NSIS 安装包需要 winCodeSign 缓存正确解压。
+  # Windows 非 Developer Mode 下 7-Zip 无法创建 darwin 符号链接导致解压失败。
+  # 临时方案：使用 --dir 生成 win-unpacked + 手动 Compress-Archive 打包 ZIP。
+  # 永久方案：开启 Windows Developer Mode 或以管理员身份运行打包命令。
 mac:
   target:
     - dmg
-  icon: build/icon.png
 linux:
   target:
     - AppImage
-  icon: build/icon.png
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

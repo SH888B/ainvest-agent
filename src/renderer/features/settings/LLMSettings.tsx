@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { usePreferenceStore } from '../../stores/usePreferenceStore'
 import { validateConfig } from '../../services/llm/llmService'
-import { AVAILABLE_MODELS } from '@shared/constants'
+import { AVAILABLE_MODELS, EMBEDDING_DIMENSIONS_OPTIONS } from '@shared/constants'
 import { Check, AlertCircle, Eye, EyeOff } from 'lucide-react'
 
 /**
@@ -83,6 +83,37 @@ export const LLMSettings: React.FC = () => {
             </option>
           ))}
         </select>
+      </div>
+
+      {/* Embedding 模型 */}
+      <div className="space-y-1">
+        <label className="text-xs text-text-muted">向量模型</label>
+        <select
+          value={llmConfig.embeddingModel || 'embedding-3'}
+          onChange={(e) => setLLMConfig({ embeddingModel: e.target.value })}
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none"
+        >
+          <option value="embedding-3">embedding-3</option>
+        </select>
+      </div>
+
+      {/* Embedding 向量维度 */}
+      <div className="space-y-1">
+        <label className="text-xs text-text-muted">向量维度</label>
+        <select
+          value={llmConfig.embeddingDimensions || 512}
+          onChange={(e) => setLLMConfig({ embeddingDimensions: Number(e.target.value) })}
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none"
+        >
+          {EMBEDDING_DIMENSIONS_OPTIONS.map((d) => (
+            <option key={d} value={d}>
+              {d} 维
+            </option>
+          ))}
+        </select>
+        <p className="text-[10px] text-text-muted">
+          维度越高语义精度越好，但占用存储空间越大。变更维度将重建向量索引。
+        </p>
       </div>
 
       {/* Temperature */}

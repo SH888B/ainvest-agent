@@ -37,6 +37,10 @@ export interface LLMConfig {
   baseUrl: string
   model: string
   temperature: number
+  /** Embedding 模型名，默认 embedding-3 */
+  embeddingModel?: string
+  /** Embedding 向量维度，默认 512 */
+  embeddingDimensions?: number
 }
 
 /** 用户偏好（长期记忆） */
@@ -55,6 +59,7 @@ export interface Session {
   createdAt: string
   updatedAt: string
   isCustomNamed?: boolean
+  archivedMessageCount?: number
 }
 
 /** 意图类型 */
@@ -66,6 +71,7 @@ export type IntentType =
   | 'general.chat'
   | 'session.manage'
   | 'preference.update'
+  | 'shell.execute'
   | 'unknown'
 
 /** 意图识别结果 */

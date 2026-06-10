@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { SuggestionCards } from './SuggestionCards'
@@ -10,9 +10,10 @@ import { useMemoryStore } from '../../stores/useMemoryStore'
 import { useThinkingStore } from '../../stores/useThinkingStore'
 import { runAgentTurn } from '../../services/agent/agentEngine'
 import '../../services/tools'
-import { Settings, Wrench } from 'lucide-react'
+import { Settings, Wrench, Brain } from 'lucide-react'
 import { useDevToolStore } from '../../stores/useDevToolStore'
 import { ChatMessage } from '@shared/types'
+import { isModelReady, isModelLoading, preloadModel } from '../../services/memory/embeddingService'
 
 /**
  * 聊天面板主容器
@@ -28,8 +29,27 @@ export const ChatPanel: React.FC = () => {
   const { toggle: toggleDevTool } = useDevToolStore()
   const [input, setInput] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'ready'>('idle')
 
   const messages = currentSessionId ? getMessages(currentSessionId) : []
+
+  // 模型加载状态跟踪 + 后台预加载
+  useEffect(() => {
+    const check = () => {
+      if (isModelReady()) setModelStatus('ready')
+      else if (isModelLoading()) setModelStatus('loading')
+      else setModelStatus('idle')
+    }
+    check()
+
+    // 后台预加载模型（如果还没加载）
+    if (!isModelReady() && !isModelLoading()) {
+      preloadModel().catch(() => {})
+    }
+
+    const interval = setInterval(check, 1000)
+    return () => clearInterval(interval)
+  }, [])
 
   const handleSend = useCallback(
     async (textOverride?: string) => {
@@ -125,6 +145,16 @@ export const ChatPanel: React.FC = () => {
           <div className="text-sm text-warning">
             尚未配置大模型 API Key，点击右上角设置图标进行配置
           </div>
+        </div>
+      )}
+
+      {/* 语义模型加载提示 */}
+      {modelStatus === 'loading' && (
+        <div className="mx-4 mt-2 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2">
+          <Brain className="h-4 w-4 animate-pulse text-primary" />
+          <span className="text-xs text-primary">
+            正在初始化语义模型（首次加载需要几秒，后台运行不影响使用）...
+          </span>
         </div>
       )}
 

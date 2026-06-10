@@ -1,6 +1,8 @@
 import { app, BrowserWindow, ipcMain } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
+import { registerShellIPC } from './ipcHandlers/shell'
+import { registerMemoryIPC } from './ipcHandlers/memory'
 
 /**
  * Electron 主进程入口
@@ -90,7 +92,16 @@ ipcMain.handle('app:getVersion', () => {
   return app.getVersion()
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  const userDataPath = getUserDataPath()
+
+  // 确保 Shell workspace 目录存在
+  await ensureDir(path.join(userDataPath, 'workspace'))
+
+  // 注册 IPC handlers
+  registerShellIPC(userDataPath)
+  registerMemoryIPC()
+
   createWindow()
 
   app.on('activate', () => {

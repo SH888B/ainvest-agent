@@ -54,8 +54,8 @@ export const StockChart: React.FC<StockChartProps> = ({ symbol, isUp }) => {
   return (
     <div className="mt-4">
       <h4 className="mb-2 text-xs font-semibold text-text-muted">30日走势</h4>
-      <div className="h-52">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-52 w-full">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <AreaChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
             <defs>
               <linearGradient id={`gradient-${symbol}`} x1="0" y1="0" x2="0" y2="1">

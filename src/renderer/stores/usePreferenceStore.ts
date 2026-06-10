@@ -1,7 +1,14 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { LLMConfig } from '@shared/types'
-import { STORAGE_KEYS, DEFAULT_BASE_URL, DEFAULT_MODEL, DEFAULT_TEMPERATURE } from '@shared/constants'
+import {
+  STORAGE_KEYS,
+  DEFAULT_BASE_URL,
+  DEFAULT_MODEL,
+  DEFAULT_TEMPERATURE,
+  DEFAULT_EMBEDDING_MODEL,
+  DEFAULT_EMBEDDING_DIMENSIONS,
+} from '@shared/constants'
 
 /**
  * 用户偏好与大模型配置状态管理
@@ -20,6 +27,8 @@ const defaultConfig: LLMConfig = {
   baseUrl: DEFAULT_BASE_URL,
   model: DEFAULT_MODEL,
   temperature: DEFAULT_TEMPERATURE,
+  embeddingModel: DEFAULT_EMBEDDING_MODEL,
+  embeddingDimensions: DEFAULT_EMBEDDING_DIMENSIONS,
 }
 
 export const usePreferenceStore = create<PreferenceState>()(

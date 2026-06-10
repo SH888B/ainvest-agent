@@ -25,8 +25,8 @@ export const MarketDistributionChart: React.FC<MarketDistributionChartProps> = (
       <h3 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
         涨跌分布
       </h3>
-      <div className="h-48">
-        <ResponsiveContainer width="100%" height="100%">
+      <div className="h-48 w-full">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis type="number" stroke="#9ca3af" fontSize={12} />

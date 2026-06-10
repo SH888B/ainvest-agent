@@ -1,5 +1,9 @@
 # AInvest Agent v5 技术架构文档
 
+> ⚠️ **过时文档**：本文档中 Embedding 模型选型（all-MiniLM-L6-v2 本地 WASM）和 Vectra 渲染进程架构已被 v5.1/v5.1.1 废弃。请参阅以下文档获取最新方案：
+> - v5.1：`docs/tech/v5.1-embedding-api-migration.md`（本地模型 → 智谱云端 API）
+> - v5.1.1：`docs/tech/v5.1.1-vectra-main-process-migration.md`（Vectra 渲染进程 → 主进程 IPC）
+>
 > 版本：v5.0.0
 > 日期：2026-06-10
 > 对应 PRD：`docs/prd/v5-prd.md`
@@ -155,8 +159,9 @@ const CONSTRAINTS = {
 **推荐：方案 A — transformers.js**
 - 理由：完全离线，保护隐私，适合桌面应用
 - 模型：`Xenova/all-MiniLM-L6-v2`（384 维向量，轻量，中文可用）
-- 首次使用自动下载模型到 `userData/.cache/transformers/`
-- 备选：如果打包体积敏感，可降级为方案 B（Kimi API）
+- **分发方式：打包进安装包**（~20MB ONNX 模型文件随应用一起分发）
+- 安装路径：`app.asar.unpacked/node_modules/@xenova/transformers/models/`
+- 备选：设置中提供"使用云端 Embedding API"降级开关（Kimi API）
 
 #### 2.2.3 记忆提取策略
 
@@ -246,6 +251,13 @@ export interface ShellConfirmRequest {
   args: string[]
   reason: string  // 为什么需要确认（匹配到的危险模式）
 }
+
+/** Session 归档状态 */
+export interface SessionArchiveState {
+  sessionId: string
+  archivedMessageCount: number  // 已归档到第几条消息
+  lastArchivedAt: string
+}
 ```
 
 ### 3.2 存储文件组织
@@ -255,19 +267,30 @@ userData/ainvest/
   ├─ memory.json              # 原有显式偏好（不变）
   ├─ sessions/                # Session 数据（不变）
   ├─ workspace/               # NEW：Shell 执行工作目录
-  └─ vector-memory/
-      ├─ index.json           # Vectra 索引文件
-      └─ data/                # 向量数据分片
+  ├─ vector-memory/
+  │   ├─ index.json           # Vectra 索引文件
+  │   └─ data/                # 向量数据分片
+  └─ archive-state.json       # NEW：Session 归档状态（sessionId → archivedMessageCount）
 ```
 
 ---
 
 ## 四、IPC 通信规范（新增）
 
+> ⚠️ v5.1.1 新增了 8 个 `memory:*` IPC 通道，详见 `docs/tech/v5.1.1-vectra-main-process-migration.md`
+
 | Channel | 方向 | 参数 | 返回 | 说明 |
 |---------|------|------|------|------|
 | `shell:execute` | Renderer → Main | `ShellExecuteOptions` | `ShellExecuteResult` | 执行 shell 命令 |
 | `shell:confirm` | Main → Renderer | `ShellConfirmRequest` | `boolean` | 危险命令确认（同步弹窗） |
+| `memory:insertItem` | Renderer → Main | `VectorRecord` | `void` | 插入单条向量记录 |
+| `memory:insertItems` | Renderer → Main | `VectorRecord[]` | `void` | 批量插入向量记录 |
+| `memory:queryItems` | Renderer → Main | `vector: number[], topK: number` | `RawQueryResult[]` | 向量相似度检索 |
+| `memory:deleteItem` | Renderer → Main | `id: string` | `void` | 删除向量记录 |
+| `memory:getStats` | Renderer → Main | — | `{ itemCount, path }` | 获取索引统计 |
+| `memory:listItems` | Renderer → Main | — | `VectorRecord[]` | 列出所有记录 |
+| `memory:getItem` | Renderer → Main | `id: string` | `item \| null` | 查询单条记录 |
+| `memory:upsertItem` | Renderer → Main | `id, vector, metadata` | `void` | 更新或插入记录 |
 
 ---
 
@@ -296,20 +319,30 @@ Preload IPC → main:shell:execute
 结果回传 → AgentEngine → LLM 生成回复
 ```
 
-### 5.2 记忆归档流程
+### 5.2 记忆归档流程（增量归档）
 
 ```
-Session 结束（用户新建 Session / 关闭应用）
+触发条件：新建 Session / 关闭应用 / 手动点击"归档当前会话"
   ↓
-useSessionStore 监听到 currentSessionId 变化
+memoryArchive.archiveSession(sessionId)
   ↓
-触发 memoryArchive.archiveSession(sessionId)
+1. 获取 Session 的 archivedMessageCount（默认 0）
+2. 如果消息数 <= archivedMessageCount → 跳过（无新消息）
+3. 新消息 = messages.slice(archivedMessageCount)
   ↓
-1. 获取该 Session 完整对话历史
-2. 调用 LLM（memoryExtractor.ts）提取记忆片段
-3. 每条记忆调用 embeddingService.generate(content) → vector
-4. 存入 vectra.add({ id, vector, metadata })
-5. Vectra 自动持久化到 disk
+【轨道一：显式偏好】
+4. 用 Session 全部消息调用 LLM 提取 UserMemory
+5. 合并到现有 memory.json（覆盖更新，整段对话更准确）
+  ↓
+【轨道二：向量记忆片段】
+6. 用新消息调用 LLM 提取 MemoryFragment[]
+7. 每条调用 embeddingService.generate(content) → vector
+8. 与该 Session 已有记忆做相似度比较：
+   - similarity > 0.95 → 跳过
+   - similarity 0.8-0.95 → 合并更新
+   - similarity < 0.8 → vectra.add({ id, vector, metadata })
+9. Vectra 自动持久化到 disk
+10. 更新 archivedMessageCount = messages.length
 ```
 
 ### 5.3 记忆检索流程
@@ -345,7 +378,7 @@ LLM 生成回复（自然关联到宁德时代）
 
 ### 6.2 记忆系统安全
 
-1. **数据不出境**：Embedding 模型本地运行，不向外部 API 发送用户对话
+1. ~~**数据不出境**：Embedding 模型本地运行，不向外部 API 发送用户对话~~ → **v5.1 修订**：Embedding 文本通过 HTTPS 上传至智谱 API（但不上传完整对话上下文），向量数据仍本地存储
 2. **存储加密**：向量数据库文件仅本地存储，不上传云端
 3. **敏感信息过滤**：归档前通过正则检测并替换敏感信息（API Key、密码等）
 
@@ -355,11 +388,11 @@ LLM 生成回复（自然关联到宁德时代）
 
 | 风险 | 影响 | 回退方案 |
 |------|------|---------|
-| transformers.js 模型下载失败 | Embedding 无法生成 | 降级为调用 Kimi Embedding API（需用户配置） |
+| transformers.js ONNX 模型加载失败 | Embedding 无法生成 | 降级为调用 Kimi Embedding API（需用户配置） |
 | Vectra 索引损坏 | 语义检索失效 | 重建索引（从 memory.json 重新 embedding） |
 | Shell 执行超时频繁 | 用户体验差 | 调整超时时间或引导用户优化脚本 |
 | LLM 提取记忆质量差 | 记忆不准确 | 提供用户手动审核归档内容的入口 |
-| 打包体积膨胀 (+20MB) | 安装包变大 | 将 embedding 模型改为按需下载，不打入安装包 |
+| 用户老 Session 消息被删除 | archivedMessageCount > 实际消息数 | 归档前比较，无新消息则跳过 |
 
 ---
 

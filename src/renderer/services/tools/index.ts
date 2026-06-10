@@ -7,5 +7,6 @@ import './market'
 import './news'
 import './strategy'
 import './stock'
+import './shell'
 
 export { executeTool, hasTool, getToolExecutor } from './registry'

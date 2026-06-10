@@ -6,12 +6,14 @@ import {
   NEWS_SEARCH_EXTRACTION_PROMPT,
   STRATEGY_BACKTEST_EXTRACTION_PROMPT,
   STOCK_PROFILE_EXTRACTION_PROMPT,
+  SHELL_EXECUTE_EXTRACTION_PROMPT,
 } from './prompts'
 import { executeTool, hasTool } from '../tools/registry'
 import { streamChat } from '../llm/llmService'
-import { logInfo, logDebug, logError } from '../logger/logger'
+import { logInfo, logDebug, logWarn, logError } from '../logger/logger'
 import { useThinkingStore } from '../../stores/useThinkingStore'
 import { MAX_CONTEXT_ROUNDS } from '@shared/constants'
+import { searchMemories } from '../memory/memoryArchive'
 
 /**
  * Agent 引擎
@@ -84,8 +86,25 @@ export const runAgentTurn = async (
       return
     }
 
-    // 第三步：准备 System Prompt 和上下文消息
-    const systemPrompt = buildSystemPrompt(memory)
+    // 第三步：语义检索相关记忆
+    let relatedMemories: Awaited<ReturnType<typeof searchMemories>> = []
+    try {
+      relatedMemories = await searchMemories(userInput, { topK: 5, minScore: 0.7 })
+      if (relatedMemories.length > 0) {
+        logInfo('agent', 'agent.memory.retrieved', {
+          turnId,
+          count: relatedMemories.length,
+          topContent: relatedMemories[0]?.content?.slice(0, 50),
+        })
+      }
+    } catch (err) {
+      // 提升日志级别为 warn，便于排查问题
+      logWarn('agent', 'agent.memory.searchFailed', { turnId, error: String(err) })
+      // 记忆检索失败不影响主流程，继续无记忆模式
+    }
+
+    // 第四步：准备 System Prompt 和上下文消息
+    const systemPrompt = buildSystemPrompt(memory, relatedMemories)
     const contextMessages: ChatMessage[] = [
       { role: 'system', content: systemPrompt },
       ...history.slice(-MAX_CONTEXT_ROUNDS * 2),
@@ -95,6 +114,7 @@ export const runAgentTurn = async (
       turnId,
       systemPromptLength: systemPrompt.length,
       contextMessagesCount: contextMessages.length,
+      memoryInjected: relatedMemories.length,
     })
 
     // 第四步：如果是工具意图，先执行工具
@@ -207,6 +227,7 @@ const extractToolArgs = async (
     'news.search': NEWS_SEARCH_EXTRACTION_PROMPT,
     'strategy.backtest': STRATEGY_BACKTEST_EXTRACTION_PROMPT,
     'stock.profile': STOCK_PROFILE_EXTRACTION_PROMPT,
+    'shell.execute': SHELL_EXECUTE_EXTRACTION_PROMPT,
   }
 
   const prompt = promptMap[intent] || '从用户输入中提取相关参数，返回 JSON 格式'

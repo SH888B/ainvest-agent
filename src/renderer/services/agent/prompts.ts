@@ -1,15 +1,18 @@
 import { UserMemory } from '@shared/types'
+import { MemoryFragment } from '../../../shared/types/memory'
 
 /**
  * Prompt 版本号
- * v3.0.0: 从 intentClassifier.ts 和 agentEngine.ts 迁移 inline prompt 到此处
+ * v5.0.0: 增加语义记忆注入
  */
-export const PROMPT_VERSION = 'v4.0.0'
+export const PROMPT_VERSION = 'v5.0.0'
 
 /**
  * 构建基础 System Prompt
+ * @param memory 用户显式偏好
+ * @param relatedMemories 语义检索到的相关历史记忆
  */
-export const buildSystemPrompt = (memory?: UserMemory): string => {
+export const buildSystemPrompt = (memory?: UserMemory, relatedMemories?: MemoryFragment[]): string => {
   const basePrompt = `你是一个专业的投资研究助手，名叫 AInvest Agent。
 
 你可以帮助用户完成以下任务：
@@ -17,39 +20,48 @@ export const buildSystemPrompt = (memory?: UserMemory): string => {
 2. 搜索与股票或行业相关的新闻
 3. 对投资策略进行历史回测
 4. 查看个股基本面档案
+5. 执行本地命令或脚本（如 python、node 等）——当用户要求运行命令时，你应该直接执行并返回结果
 
 请用中文回答，保持专业、简洁、准确。如果不确定用户意图，可以礼貌询问澄清。`
 
-  if (!memory) {
+  const sections: string[] = [basePrompt]
+
+  // 注入显式长期记忆
+  if (memory) {
+    const memoryParts: string[] = []
+
+    if (memory.riskPreference) {
+      memoryParts.push(`用户风险偏好：${memory.riskPreference}`)
+    }
+
+    if (memory.focusSectors && memory.focusSectors.length > 0) {
+      memoryParts.push(`用户关注板块：${memory.focusSectors.join('、')}`)
+    }
+
+    if (memory.summary) {
+      memoryParts.push(`用户画像摘要：${memory.summary}`)
+    }
+
+    if (memoryParts.length > 0) {
+      sections.push(`以下是你对当前用户的了解（基于历史对话提炼）：\n${memoryParts.join('\n')}`)
+    }
+  }
+
+  // 注入语义检索到的相关记忆
+  if (relatedMemories && relatedMemories.length > 0) {
+    const memoryLines = relatedMemories
+      .slice(0, 5)
+      .map((m, i) => `${i + 1}. [${m.category}] ${m.content}`)
+      .join('\n')
+
+    sections.push(`以下是之前对话中提取的相关记忆（你可以直接使用这些信息来理解用户意图）：\n${memoryLines}\n\n重要规则：\n- 当用户使用代词或模糊指代（如"那只股票""那家公司""那个板块"）时，请结合记忆主动推断指代对象\n- 例如：如果记忆中有"关注宁德时代"，用户问"那家公司怎么样"时，你应该推断为宁德时代并直接回答\n- 不要回复"请问您指的是哪只股票"，而是基于记忆直接给出答案\n- 如果记忆中有多个可能的指代对象，可以简短列出但优先选择最相关的\n- 自然地融入回答，不需要说"根据记忆"或"根据历史"`)
+  }
+
+  if (sections.length === 1) {
     return basePrompt
   }
 
-  // 注入长期记忆
-  const memoryParts: string[] = []
-
-  if (memory.riskPreference) {
-    memoryParts.push(`用户风险偏好：${memory.riskPreference}`)
-  }
-
-  if (memory.focusSectors && memory.focusSectors.length > 0) {
-    memoryParts.push(`用户关注板块：${memory.focusSectors.join('、')}`)
-  }
-
-  if (memory.summary) {
-    memoryParts.push(`用户画像摘要：${memory.summary}`)
-  }
-
-  if (memoryParts.length === 0) {
-    return basePrompt
-  }
-
-  return `${basePrompt}
-
----
-以下是你对当前用户的了解（基于历史对话提炼）：
-${memoryParts.join('\n')}
-
-请根据以上信息，在回答时尽量贴合用户的关注点和偏好风格。`
+  return sections.join('\n\n---\n\n')
 }
 
 /**
@@ -64,6 +76,7 @@ export const buildIntentPrompt = (text: string): string => {
 - news.search: 搜索股票或行业新闻
 - strategy.backtest: 策略回测
 - stock.profile: 个股基本面档案
+- shell.execute: 执行本地命令或脚本（如运行 Python、查看文件等）
 - session.manage: 对话管理（新建/切换/删除）
 - preference.update: 更新用户偏好
 - general.chat: 闲聊、问候、投资咨询等
@@ -88,3 +101,6 @@ export const STRATEGY_BACKTEST_EXTRACTION_PROMPT =
 
 export const STOCK_PROFILE_EXTRACTION_PROMPT =
   '从用户输入中提取股票代码。只返回 JSON 格式：{"symbol": "股票代码"}'
+
+export const SHELL_EXECUTE_EXTRACTION_PROMPT =
+  '从用户输入中提取要执行的命令和参数。只返回 JSON 格式：{"command": "命令名", "args": ["参数1", "参数2"], "cwd": "可选的工作目录"}\n\n示例：\n- 输入"运行 test.py" → {"command": "python", "args": ["test.py"]}\n- 输入"查看 workspace 目录" → {"command": "ls", "args": ["workspace"]}\n- 输入"执行 node -e console.log(1)" → {"command": "node", "args": ["-e", "console.log(1)"]}'

@@ -39,7 +39,12 @@ coverage/
 # Optional: lock file (uncomment if using pnpm or yarn)
 # package-lock.json
 
+# Test results
+test/results-*.txt
+
 # Misc
 *.tmp
 *.temp
 build-output.*
+build-log.txt
+eslint-check.txt

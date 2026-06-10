@@ -25,6 +25,15 @@ export const AVAILABLE_MODELS = [
 /** 默认 Temperature */
 export const DEFAULT_TEMPERATURE = 0.7
 
+/** 默认 Embedding 模型 */
+export const DEFAULT_EMBEDDING_MODEL = 'embedding-3'
+
+/** 默认 Embedding 向量维度 */
+export const DEFAULT_EMBEDDING_DIMENSIONS = 512
+
+/** 可选 Embedding 维度列表 */
+export const EMBEDDING_DIMENSIONS_OPTIONS = [256, 512, 1024, 2048] as const
+
 /** 意图类型列表 */
 export const INTENT_TYPES: IntentType[] = [
   'market.query',
@@ -34,6 +43,7 @@ export const INTENT_TYPES: IntentType[] = [
   'general.chat',
   'session.manage',
   'preference.update',
+  'shell.execute',
   'unknown',
 ]
 
@@ -125,6 +135,7 @@ export const STORAGE_KEYS = {
   LLM_CONFIG: 'ainvest:llmConfig',
   SESSIONS: 'ainvest:sessions',
   CURRENT_SESSION_ID: 'ainvest:currentSessionId',
+  ARCHIVE_STATE: 'ainvest:archiveState',
 } as const
 
 /** 文件路径常量 */
