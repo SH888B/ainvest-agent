@@ -20,10 +20,10 @@ export const QUICK_TOOLS: QuickTool[] = [
     placeholders: ['[股票代码]'],
   },
   {
-    id: 'news.search',
+    id: 'web.browse',
     label: '搜新闻',
     icon: 'Newspaper',
-    template: '搜一下 [关键词] 的新闻',
+    template: '搜索 [关键词] 的最新新闻',
     placeholders: ['[关键词]'],
   },
   {

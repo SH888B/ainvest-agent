@@ -26,6 +26,7 @@ export interface ThinkingStep {
   message: string
   detail?: string
   error?: string
+  meta?: Record<string, unknown>
   timestamp: number
 }
 
@@ -39,7 +40,7 @@ interface ThinkingState {
 
   startTurn: (turnId: string) => void
   addStep: (step: Omit<ThinkingStep, 'timestamp'>) => void
-  completeStep: (stepType: ThinkingStepType) => void
+  completeStep: (stepType: ThinkingStepType, meta?: Record<string, unknown>) => void
   failStep: (stepType: ThinkingStepType, error: string) => void
   setExpanded: (expanded: boolean) => void
   clearTurn: () => void
@@ -72,12 +73,14 @@ export const useThinkingStore = create<ThinkingState>((set, get) => ({
     })
   },
 
-  completeStep: (stepType) => {
+  completeStep: (stepType, meta) => {
     const { currentTurnId, turns } = get()
     if (!currentTurnId) return
     const steps = turns[currentTurnId] || []
     const updated = steps.map((s) =>
-      s.type === stepType ? { ...s, status: 'completed' as const } : s
+      s.type === stepType
+        ? { ...s, status: 'completed' as const, ...(meta ? { meta: { ...s.meta, ...meta } } : {}) }
+        : s
     )
     set({
       turns: {

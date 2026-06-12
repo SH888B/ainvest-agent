@@ -47,6 +47,10 @@ const LOCAL_RULES = [
   { pattern: /(python|node|npm|git|curl).{0,5}(运行|执行|调用|跑|脚本)/i, intent: 'shell.execute', confidence: 0.9 },
   { pattern: /(查看|列出|显示|查一下).{0,5}(文件|目录|文件夹|workspace)/i, intent: 'shell.execute', confidence: 0.85 },
   { pattern: /^(ls|dir|cat|type|grep|find)\s+/i, intent: 'shell.execute', confidence: 0.85 },
+  // web.browse
+  { pattern: /(查|搜索|看看|打开|浏览).{0,10}(网页|网站|研报|新闻|公告|雪球|东方财富|同花顺|财联社)/, intent: 'web.browse', confidence: 0.85 },
+  { pattern: /(雪球|东方财富|同花顺|财联社).{0,10}(查|搜索|看看)/, intent: 'web.browse', confidence: 0.85 },
+  { pattern: /(最新|最近).{0,5}(研报|公告|新闻|资讯).{0,5}(哪里|怎么|哪里看|在哪)/, intent: 'web.browse', confidence: 0.8 },
   // preference.update
   { pattern: /(风险偏好|风险|偏好|关注板块|关注|我喜欢|我不喜欢|记住|记住我)/, intent: 'preference.update', confidence: 0.75 },
   // general.chat
@@ -115,6 +119,14 @@ assert('我喜欢', classifyIntentLocal('我喜欢新能源板块')?.intent === 
 console.log('\n--- general.chat ---')
 assert('你好 → general.chat', classifyIntentLocal('你好')?.intent === 'general.chat')
 assert('大盘怎么样 → general.chat', classifyIntentLocal('大盘怎么样')?.intent === 'general.chat')
+
+// === Web Browse 测试 ===
+console.log('\n--- web.browse ---')
+assert('查雪球网页 → web.browse', classifyIntentLocal('查一下雪球网页')?.intent === 'web.browse')
+assert('东方财富看看 → web.browse', classifyIntentLocal('在东方财富看看')?.intent === 'web.browse')
+assert('最新研报哪里看 → web.browse', classifyIntentLocal('最新研报哪里看')?.intent === 'web.browse')
+assert('打开雪球看看 → web.browse', classifyIntentLocal('打开雪球看看')?.intent === 'web.browse')
+assert('浏览东方财富 → web.browse', classifyIntentLocal('浏览东方财富研报')?.intent === 'web.browse')
 
 console.log(`\n📊 结果: ${pass} 通过, ${fail} 失败\n`)
 process.exit(fail > 0 ? 1 : 0)

@@ -9,7 +9,7 @@ import { Check, AlertCircle, Eye, EyeOff } from 'lucide-react'
  * API Key / Base URL / 模型 / Temperature
  */
 export const LLMSettings: React.FC = () => {
-  const { llmConfig, setLLMConfig, isConfigValid, validateConfig: storeValidate } = usePreferenceStore()
+  const { llmConfig, setLLMConfig, isConfigValid, validateConfig: storeValidate, autoArchiveOnNewSession, setAutoArchiveOnNewSession } = usePreferenceStore()
   const [showKey, setShowKey] = useState(false)
   const [validating, setValidating] = useState(false)
   const [validationResult, setValidationResult] = useState<{
@@ -113,6 +113,31 @@ export const LLMSettings: React.FC = () => {
         </select>
         <p className="text-[10px] text-text-muted">
           维度越高语义精度越好，但占用存储空间越大。变更维度将重建向量索引。
+        </p>
+      </div>
+
+      {/* v6.0.1: 自动归档开关 */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <label className="text-xs text-text-muted">新建对话时自动归档</label>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autoArchiveOnNewSession}
+            onClick={() => setAutoArchiveOnNewSession(!autoArchiveOnNewSession)}
+            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors duration-200 ${
+              autoArchiveOnNewSession ? 'bg-primary' : 'bg-border'
+            }`}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                autoArchiveOnNewSession ? 'translate-x-4' : 'translate-x-0.5'
+              }`}
+            />
+          </button>
+        </div>
+        <p className="text-[10px] text-text-muted">
+          关闭后请手动点击"归档当前会话"按钮保存长期记忆
         </p>
       </div>
 

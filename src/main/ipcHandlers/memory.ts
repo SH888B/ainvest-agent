@@ -19,8 +19,8 @@ export const registerMemoryIPC = (): void => {
 
   ipcMain.handle('memory:queryItems', async (_event, vector: unknown, topK: unknown) => {
     if (!Array.isArray(vector)) throw new Error('Invalid vector: expected number[]')
-    if (typeof topK !== 'number') topK = 5
-    return await vectorStore.queryItems(vector, topK)
+    const topKNum = typeof topK === 'number' ? topK : 5
+    return await vectorStore.queryItems(vector, topKNum)
   })
 
   ipcMain.handle('memory:deleteItem', async (_event, id: unknown) => {

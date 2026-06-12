@@ -17,9 +17,15 @@ import {
 interface PreferenceState {
   llmConfig: LLMConfig
   isConfigValid: boolean
+  /** v6.0.1: 新建 Session 时自动归档上一个（默认关闭） */
+  autoArchiveOnNewSession: boolean
+  /** v6.0.1: 浏览器自动化启用开关（默认开启） */
+  browserEnabled: boolean
 
   setLLMConfig: (config: Partial<LLMConfig>) => void
   validateConfig: () => boolean
+  setAutoArchiveOnNewSession: (val: boolean) => void
+  setBrowserEnabled: (val: boolean) => void
 }
 
 const defaultConfig: LLMConfig = {
@@ -36,6 +42,8 @@ export const usePreferenceStore = create<PreferenceState>()(
     (set, get) => ({
       llmConfig: { ...defaultConfig },
       isConfigValid: false,
+      autoArchiveOnNewSession: false,
+      browserEnabled: true,
 
       setLLMConfig: (config: Partial<LLMConfig>) => {
         set((state) => ({
@@ -48,6 +56,14 @@ export const usePreferenceStore = create<PreferenceState>()(
         const valid = apiKey.length > 0 && baseUrl.length > 0 && model.length > 0
         set({ isConfigValid: valid })
         return valid
+      },
+
+      setAutoArchiveOnNewSession: (val: boolean) => {
+        set({ autoArchiveOnNewSession: val })
+      },
+
+      setBrowserEnabled: (val: boolean) => {
+        set({ browserEnabled: val })
       },
     }),
     {

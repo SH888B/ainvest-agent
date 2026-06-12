@@ -5,7 +5,7 @@ import { MemoryFragment } from '../../../shared/types/memory'
  * Prompt 版本号
  * v5.0.0: 增加语义记忆注入
  */
-export const PROMPT_VERSION = 'v5.0.0'
+export const PROMPT_VERSION = 'v6.0.0'
 
 /**
  * 构建基础 System Prompt
@@ -21,6 +21,7 @@ export const buildSystemPrompt = (memory?: UserMemory, relatedMemories?: MemoryF
 3. 对投资策略进行历史回测
 4. 查看个股基本面档案
 5. 执行本地命令或脚本（如 python、node 等）——当用户要求运行命令时，你应该直接执行并返回结果
+6. 浏览金融网站获取实时信息（如雪球、东方财富、财联社）——当用户询问最新研报、公告、新闻时，你可以打开相关网页提取内容
 
 请用中文回答，保持专业、简洁、准确。如果不确定用户意图，可以礼貌询问澄清。`
 
@@ -73,10 +74,10 @@ export const buildIntentPrompt = (text: string): string => {
 
 可选类型：
 - market.query: 查询股票行情、价格、涨跌幅等
-- news.search: 搜索股票或行业新闻
 - strategy.backtest: 策略回测
 - stock.profile: 个股基本面档案
 - shell.execute: 执行本地命令或脚本（如运行 Python、查看文件等）
+- web.browse: 浏览网页获取实时信息（如搜索新闻、查看最新研报、公告）
 - session.manage: 对话管理（新建/切换/删除）
 - preference.update: 更新用户偏好
 - general.chat: 闲聊、问候、投资咨询等
@@ -93,9 +94,6 @@ export const buildIntentPrompt = (text: string): string => {
 export const MARKET_QUERY_EXTRACTION_PROMPT =
   '从用户输入中提取股票代码（如 600519、AAPL）。只返回 JSON 格式：{"symbol": "股票代码"}'
 
-export const NEWS_SEARCH_EXTRACTION_PROMPT =
-  '从用户输入中提取搜索关键词。只返回 JSON 格式：{"keyword": "关键词", "limit": 5}'
-
 export const STRATEGY_BACKTEST_EXTRACTION_PROMPT =
   '从用户输入中提取策略名称、股票代码、开始日期、结束日期。只返回 JSON 格式：{"strategyName": "策略名", "symbol": "代码", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD"}'
 
@@ -104,3 +102,6 @@ export const STOCK_PROFILE_EXTRACTION_PROMPT =
 
 export const SHELL_EXECUTE_EXTRACTION_PROMPT =
   '从用户输入中提取要执行的命令和参数。只返回 JSON 格式：{"command": "命令名", "args": ["参数1", "参数2"], "cwd": "可选的工作目录"}\n\n示例：\n- 输入"运行 test.py" → {"command": "python", "args": ["test.py"]}\n- 输入"查看 workspace 目录" → {"command": "ls", "args": ["workspace"]}\n- 输入"执行 node -e console.log(1)" → {"command": "node", "args": ["-e", "console.log(1)"]}'
+
+export const BROWSER_EXTRACTION_PROMPT =
+  '从用户输入中提取搜索关键词和目标网站。返回 JSON 格式：{"query": "搜索关键词", "domain": "目标域名", "action": "snapshot"}\n\n规则：\n- query：从用户输入中提取核心搜索词，多个词用空格分隔（如"宁德时代 研报 最新"）\n- domain：根据用户指定或内容类型选择最合适的网站域名\n  - 未指定或不确定 → baidu.com（默认，搜索引擎结果最全面、提取最可靠）\n  - 用户明确提到某网站 → 使用该网站域名\n  - 研报/个股分析/财务数据 → eastmoney.com\n  - 新闻/快讯/实时资讯 → cls.cn\n  - 股票讨论/综合信息 → xueqiu.com\n  - 公告/监管信息 → cninfo.com.cn\n- action 默认 snapshot（提取文本），用户要求截图时用 screenshot\n- 如果用户已经给出了完整URL，则直接返回 {"url": "完整URL", "action": "snapshot"}\n\n示例：\n- "查一下宁德时代的研报" → {"query": "宁德时代 研报", "domain": "baidu.com"}\n- "最新财经新闻" → {"query": "财经 新闻 最新", "domain": "baidu.com"}\n- "帮我看看雪球的茅台讨论" → {"query": "贵州茅台", "domain": "xueqiu.com"}\n- "在东方财富搜索茅台新闻" → {"query": "贵州茅台 新闻", "domain": "eastmoney.com"}\n- "打开 https://xueqiu.com/S/SH600519" → {"url": "https://xueqiu.com/S/SH600519", "action": "snapshot"}'

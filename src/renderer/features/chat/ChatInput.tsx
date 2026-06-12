@@ -7,14 +7,16 @@ interface ChatInputProps {
   onSend: () => void
   input: string
   setInput: (value: string) => void
+  inputRef?: React.RefObject<HTMLTextAreaElement>
 }
 
 /**
  * 聊天输入框
  * 仅负责输入收集和触发发送，发送逻辑由父组件管理
  */
-export const ChatInput: React.FC<ChatInputProps> = ({ onSend, input, setInput }) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+export const ChatInput: React.FC<ChatInputProps> = ({ onSend, input, setInput, inputRef: externalRef }) => {
+  const internalRef = useRef<HTMLTextAreaElement>(null)
+  const textareaRef = externalRef || internalRef
 
   const handleQuickToolSelect = useCallback((tool: QuickTool) => {
     setInput(tool.template)

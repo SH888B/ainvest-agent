@@ -34,16 +34,16 @@ export const DEFAULT_EMBEDDING_DIMENSIONS = 512
 /** 可选 Embedding 维度列表 */
 export const EMBEDDING_DIMENSIONS_OPTIONS = [256, 512, 1024, 2048] as const
 
-/** 意图类型列表 */
+/** 意图类型列表（v6.0.1: news.search 已合并到 web.browse） */
 export const INTENT_TYPES: IntentType[] = [
   'market.query',
-  'news.search',
   'strategy.backtest',
   'stock.profile',
   'general.chat',
   'session.manage',
   'preference.update',
   'shell.execute',
+  'web.browse',
   'unknown',
 ]
 
@@ -65,24 +65,6 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
         },
       },
       required: ['symbol'],
-    },
-  },
-  {
-    name: 'news.search',
-    description: '搜索与股票或行业相关的新闻',
-    parameters: {
-      type: 'object',
-      properties: {
-        keyword: {
-          type: 'string',
-          description: '搜索关键词',
-        },
-        limit: {
-          type: 'number',
-          description: '返回条数，默认 5',
-        },
-      },
-      required: ['keyword'],
     },
   },
   {
@@ -125,6 +107,32 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ['symbol'],
     },
   },
+  {
+    name: 'browser.open',
+    description: '搜索或打开金融网站并提取内容，用于获取实时信息。默认通过百度搜索获取最全面的结果。',
+    parameters: {
+      type: 'object',
+      properties: {
+        url: {
+          type: 'string',
+          description: '要访问的网页 URL（如果已知完整 URL）',
+        },
+        query: {
+          type: 'string',
+          description: '搜索关键词（如"宁德时代 研报"），系统自动构造搜索 URL',
+        },
+        domain: {
+          type: 'string',
+          description: '目标网站域名（如 xueqiu.com、eastmoney.com）',
+        },
+        action: {
+          type: 'string',
+          enum: ['snapshot', 'screenshot'],
+          description: '提取方式：snapshot(文本) 或 screenshot(截图)',
+        },
+      },
+    },
+  },
 ]
 
 /** 上下文保留轮数 */
@@ -137,6 +145,19 @@ export const STORAGE_KEYS = {
   CURRENT_SESSION_ID: 'ainvest:currentSessionId',
   ARCHIVE_STATE: 'ainvest:archiveState',
 } as const
+
+/** 浏览器自动化默认域名白名单 */
+export const BROWSER_DOMAIN_WHITELIST = [
+  'baidu.com',       // 通用搜索引擎，SSR 渲染，提取最可靠
+  'xueqiu.com',
+  'eastmoney.com',
+  'cls.cn',
+  '10jqka.com.cn',
+  'sina.com.cn',
+  'cninfo.com.cn',
+  'cs.com.cn',
+  'hexun.com',
+] as const
 
 /** 文件路径常量 */
 export const FILE_PATHS = {

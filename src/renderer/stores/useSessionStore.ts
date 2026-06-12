@@ -26,8 +26,10 @@ export const generateSessionName = (firstMessage: string): string => {
 interface SessionState {
   sessions: Session[]
   currentSessionId: string | null
+  /** v6: 创建中的防竞态标记（由 createSession 内部管理） */
+  isCreating: boolean
 
-  createSession: () => string
+  createSession: () => string | null
   switchSession: (id: string) => void
   renameSession: (id: string, title: string) => void
   autoRenameSession: (id: string, title: string) => void
@@ -54,12 +56,17 @@ export const useSessionStore = create<SessionState>()(
     (set, _get) => ({
       sessions: [],
       currentSessionId: null,
+      isCreating: false,
 
       createSession: () => {
+        const { isCreating } = _get()
+        if (isCreating) return null // v6: 防止重复创建
+        set({ isCreating: true })
         const session = createDefaultSession()
         set((state) => ({
           sessions: [session, ...state.sessions],
           currentSessionId: session.id,
+          isCreating: false,
         }))
         return session.id
       },
@@ -112,6 +119,15 @@ export const useSessionStore = create<SessionState>()(
     }),
     {
       name: STORAGE_KEYS.SESSIONS,
+      // v6: 启动时重置 currentSessionId，不自动恢复到上次的 Session
+      // 用户看到空白引导页，需手动选择或新建 Session
+      onRehydrateStorage: () => {
+        return (state) => {
+          if (state) {
+            state.currentSessionId = null
+          }
+        }
+      },
     }
   )
 )

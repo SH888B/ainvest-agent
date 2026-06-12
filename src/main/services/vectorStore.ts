@@ -192,7 +192,7 @@ export const upsertItem = async (
   try {
     const idx = await getIndex()
     await idx.beginUpdate()
-    await idx.upsertItem({ id, vector, metadata })
+    await idx.upsertItem({ id, vector, metadata: metadata as Record<string, import('vectra').MetadataTypes> })
     await idx.endUpdate()
   } finally {
     indexMutex.release()

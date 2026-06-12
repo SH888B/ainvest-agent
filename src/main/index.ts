@@ -3,6 +3,7 @@ import path from 'path'
 import fs from 'fs/promises'
 import { registerShellIPC } from './ipcHandlers/shell'
 import { registerMemoryIPC } from './ipcHandlers/memory'
+import { registerBrowserIPC } from './ipcHandlers/browser'
 
 /**
  * Electron 主进程入口
@@ -101,6 +102,7 @@ app.whenReady().then(async () => {
   // 注册 IPC handlers
   registerShellIPC(userDataPath)
   registerMemoryIPC()
+  registerBrowserIPC()
 
   createWindow()
 

@@ -3,10 +3,10 @@ import { classifyIntent, classifyIntentLocal } from './intentClassifier'
 import {
   buildSystemPrompt,
   MARKET_QUERY_EXTRACTION_PROMPT,
-  NEWS_SEARCH_EXTRACTION_PROMPT,
   STRATEGY_BACKTEST_EXTRACTION_PROMPT,
   STOCK_PROFILE_EXTRACTION_PROMPT,
   SHELL_EXECUTE_EXTRACTION_PROMPT,
+  BROWSER_EXTRACTION_PROMPT,
 } from './prompts'
 import { executeTool, hasTool } from '../tools/registry'
 import { streamChat } from '../llm/llmService'
@@ -123,25 +123,53 @@ export const runAgentTurn = async (
       logInfo('agent', 'agent.tool.detected', { turnId, intent })
 
       addStep({ type: 'tool.extracting', status: 'running', message: '正在提取参数...' })
-      const args = await extractToolArgs(userInput, intent, config)
+      let args = await extractToolArgs(userInput, intent, config)
+
+      // v6.0.1: web.browse 搜索优先——如果 LLM 未返回有效 url 和 query，本地兜底
+      if (intent === 'web.browse' && !args.url && !args.query) {
+        const fallbackQuery = extractFallbackBrowseQuery(userInput)
+        const fallbackDomain = detectDomainFromInput(userInput)
+        if (fallbackQuery) {
+          args = { query: fallbackQuery, domain: fallbackDomain, action: 'snapshot' }
+          logInfo('agent', 'agent.tool.fallback', { turnId, fallbackQuery, fallbackDomain })
+        }
+      }
+
+      // v6.0.1: 如果 LLM 返回了 query 但没返回 domain，从用户输入中检测
+      if (intent === 'web.browse' && args.query && !args.domain) {
+        args = { ...args, domain: detectDomainFromInput(userInput) }
+      }
+
       completeStep('tool.extracting')
       addStep({
         type: 'tool.calling',
         status: 'running',
         message: `正在调用 ${intent}...`,
         detail: JSON.stringify(args),
+        meta: {
+          tool: intent,
+          ...(args.url ? { url: String(args.url) } : {}),
+          ...(args.query ? { query: String(args.query), domain: String(args.domain || 'xueqiu.com') } : {}),
+          action: String(args.action || 'snapshot'),
+        },
       })
       logInfo('agent', 'agent.tool.args', { turnId, intent, args })
 
       onToolCall(intent, args)
 
       toolResultText = await executeTool(intent, args)
+      const isError = /^(错误：|浏览失败|工具执行错误)/.test(toolResultText)
       completeStep('tool.calling')
       addStep({
         type: 'tool.result',
-        status: 'completed',
-        message: '已获取工具结果',
+        status: isError ? 'failed' : 'completed',
+        message: isError ? '工具执行失败' : '已获取工具结果',
         detail: `结果长度：${toolResultText.length} 字`,
+        meta: {
+          tool: intent,
+          resultPreview: toolResultText.slice(0, 500),
+          hasError: isError,
+        },
       })
       logInfo('agent', 'agent.tool.result', {
         turnId,
@@ -224,10 +252,10 @@ const extractToolArgs = async (
 ): Promise<Record<string, unknown>> => {
   const promptMap: Record<string, string> = {
     'market.query': MARKET_QUERY_EXTRACTION_PROMPT,
-    'news.search': NEWS_SEARCH_EXTRACTION_PROMPT,
     'strategy.backtest': STRATEGY_BACKTEST_EXTRACTION_PROMPT,
     'stock.profile': STOCK_PROFILE_EXTRACTION_PROMPT,
     'shell.execute': SHELL_EXECUTE_EXTRACTION_PROMPT,
+    'web.browse': BROWSER_EXTRACTION_PROMPT,
   }
 
   const prompt = promptMap[intent] || '从用户输入中提取相关参数，返回 JSON 格式'
@@ -275,4 +303,41 @@ const extractToolArgs = async (
 export const quickClassify = (text: string): IntentType => {
   const result = classifyIntentLocal(text)
   return result?.intent || 'general.chat'
+}
+
+/**
+ * v6.0.1: 本地兜底搜索关键词提取
+ * 当 LLM 参数提取失败时，从用户输入中本地提取关键词
+ */
+const extractFallbackBrowseQuery = (input: string): string => {
+  return input
+    .replace(/(帮我|请|能否|可以|我想|想要|给我).{0,2}(查|搜索|看看|打开|浏览|找)/g, '')
+    .replace(/(用|在)(东方财富|雪球|同花顺|财联社|新浪|百度|东方).{0,2}(查|搜索|查询)/g, '')
+    .replace(/(东方财富|雪球|同花顺|财联社|新浪|百度|东方)(上|里|中|网)?/g, '')
+    .replace(/(最近|最新|有什么|有没有|查询|查询一下)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * v6.0.1: 从用户输入中检测目标域名
+ * 如果用户提到特定金融网站，优先使用该网站；否则默认百度搜索
+ */
+const DOMAIN_KEYWORDS: Array<{ keywords: string[]; domain: string }> = [
+  { keywords: ['东方财富', '东方财富网', 'eastmoney'], domain: 'eastmoney.com' },
+  { keywords: ['雪球', 'xueqiu'], domain: 'xueqiu.com' },
+  { keywords: ['同花顺', '10jqka'], domain: '10jqka.com.cn' },
+  { keywords: ['财联社', 'cls'], domain: 'cls.cn' },
+  { keywords: ['新浪', 'sina'], domain: 'sina.com.cn' },
+  { keywords: ['巨潮', 'cninfo'], domain: 'cninfo.com.cn' },
+  { keywords: ['百度', 'baidu'], domain: 'baidu.com' },
+]
+
+const detectDomainFromInput = (input: string): string => {
+  for (const { keywords, domain } of DOMAIN_KEYWORDS) {
+    if (keywords.some((kw) => input.includes(kw))) {
+      return domain
+    }
+  }
+  return 'baidu.com'
 }

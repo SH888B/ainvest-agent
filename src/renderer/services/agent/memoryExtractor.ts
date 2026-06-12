@@ -217,18 +217,6 @@ export const extractMemoryFragments = async (
 }
 
 /**
- * 兜底提取：当 LLM 不返回有效 JSON 时，基于关键词从所有用户消息中提取记忆
- * v5.1.1: 从只取最后一条改为关键词匹配所有用户消息，提取多条记忆
- */
-function extractFallbackFragment(
-  messages: { role: string; content: string }[]
-): MemoryFragment | null {
-  // 保留旧接口兼容，但实际使用 multi 版本
-  const fragments = extractFallbackFragments(messages)
-  return fragments[0] || null
-}
-
-/**
  * 多条兜底提取：基于关键词从所有用户消息中提取记忆
  */
 function extractFallbackFragments(

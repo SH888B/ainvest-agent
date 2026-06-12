@@ -46,25 +46,27 @@ const LOCAL_RULES: Array<{
     confidence: 0.75,
   },
 
-  // ===== news.search：新闻搜索 =====
+  // ===== news.search：已合并到 web.browse =====
+  // v6.0.1: news.search (mock) 合并到 web.browse (CDP 真实抓取)
+  // 以下规则 intent 改为 web.browse，confidence 不变
   {
     pattern: /(新闻|资讯|消息|报道|最新消息|热点).{0,5}(\d{6}|[A-Z]{2,5}|[\u4e00-\u9fa5]{2,6})/,
-    intent: 'news.search',
+    intent: 'web.browse',
     confidence: 0.8,
   },
   {
     pattern: /(\d{6}|[A-Z]{2,5}|[\u4e00-\u9fa5]{2,6}).{0,5}(新闻|资讯|消息|报道)/,
-    intent: 'news.search',
+    intent: 'web.browse',
     confidence: 0.8,
   },
   {
     pattern: /(搜|搜索|查|查找).{0,5}(新闻|资讯|消息)/,
-    intent: 'news.search',
+    intent: 'web.browse',
     confidence: 0.8,
   },
   {
     pattern: /(有什么|最新|最近).{0,3}(新闻|资讯|消息)/,
-    intent: 'news.search',
+    intent: 'web.browse',
     confidence: 0.75,
   },
 
@@ -141,11 +143,36 @@ const LOCAL_RULES: Array<{
     confidence: 0.85,
   },
 
-  // ===== preference.update：偏好更新 =====
+  // ===== web.browse：浏览网页 =====
+  // 注意：同时匹配"搜"和"搜索"（口语化缩写），第二组包含"资讯"
   {
-    pattern: /(风险偏好|风险|偏好|关注板块|关注|我喜欢|我不喜欢|记住|记住我)/,
+    pattern: /(搜|搜索|查|看看|打开|浏览).{0,10}(网页|网站|研报|新闻|资讯|公告|雪球|东方财富|同花顺|财联社)/,
+    intent: 'web.browse',
+    confidence: 0.85,
+  },
+  {
+    pattern: /(雪球|东方财富|同花顺|财联社).{0,10}(搜|搜索|查|看看)/,
+    intent: 'web.browse',
+    confidence: 0.85,
+  },
+  {
+    pattern: /(最新|最近).{0,5}(研报|公告|新闻|资讯).{0,5}(哪里|怎么|哪里看|在哪)/,
+    intent: 'web.browse',
+    confidence: 0.8,
+  },
+
+  // ===== preference.update：偏好更新 =====
+  // v6.0.1: 精确化规则，只匹配明确的更新/设置意图，不匹配查询意图
+  // "我之前关注哪些公司"是查询偏好，应走 general.chat（记忆检索）
+  {
+    pattern: /(设置|更新|修改|调整|变更).{0,5}(风险偏好|偏好|关注板块|投资风格|风险)/,
     intent: 'preference.update',
-    confidence: 0.75,
+    confidence: 0.9,
+  },
+  {
+    pattern: /^(记住|记住我|我喜欢|我不喜欢|我关注|我偏好|我的风险|我的偏好)/,
+    intent: 'preference.update',
+    confidence: 0.85,
   },
 
   // ===== general.chat：闲聊兜底 =====
@@ -178,17 +205,25 @@ const LOCAL_RULES: Array<{
 
 /**
  * 本地正则兜底识别
+ * v6.0.1: 改为遍历所有规则，返回置信度最高的匹配
+ * 修复：当多个规则匹配同一输入时（如"搜索东方财富的贵州茅台新闻"同时匹配 news.search 和 web.browse），
+ * 应返回置信度最高的，而非数组中最先出现的
  */
 export const classifyIntentLocal = (text: string): IntentResult | null => {
+  let bestMatch: IntentResult | null = null
+
   for (const rule of LOCAL_RULES) {
     if (rule.pattern.test(text)) {
-      return {
-        intent: rule.intent,
-        confidence: rule.confidence,
+      if (!bestMatch || rule.confidence > bestMatch.confidence) {
+        bestMatch = {
+          intent: rule.intent,
+          confidence: rule.confidence,
+        }
       }
     }
   }
-  return null
+
+  return bestMatch
 }
 
 /**

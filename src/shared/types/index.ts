@@ -62,16 +62,16 @@ export interface Session {
   archivedMessageCount?: number
 }
 
-/** 意图类型 */
+/** 意图类型（v6.0.1: news.search 已合并到 web.browse） */
 export type IntentType =
   | 'market.query'
-  | 'news.search'
   | 'strategy.backtest'
   | 'stock.profile'
   | 'general.chat'
   | 'session.manage'
   | 'preference.update'
   | 'shell.execute'
+  | 'web.browse'
   | 'unknown'
 
 /** 意图识别结果 */

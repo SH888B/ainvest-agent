@@ -1,5 +1,43 @@
 # AInvest CLI Agent 更新日志
 
+## [6.0.0] - 2026-06-11
+
+### 修复（P0 — 核心体验 Bug）
+
+- **MessageList 订阅模式修复**：`useMemo + getMessages` 改为 zustand 直接选择器，解决流式输出卡住和多轮对话消息不显示的根因
+- **ChatPanel messages 引用修复**：同步修复 ChatPanel 中的 `getMessages()` 反模式
+- **ChatStore 持久化优化**：debounce 从 800ms 缩短到 100ms；新增 `flushStorage` 事件机制，`beforeunload` 时立即写入，确保数据不丢失
+- **Session 创建竞态修复**：新增 `isCreating` loading 态，防重复点击；异步归档放后台不阻塞 UI
+
+### 新增功能（P1 — 浏览器自动化）
+
+- **BrowserCDPService**：基于 Electron CDP 的浏览器自动化服务，复用自带 Chromium，0 额外体积
+- **IPC 通道**：`browser:open`、`browser:screenshot`、`browser:close` 三个 IPC 通道
+- **Preload API**：`window.browser` 安全暴露给渲染进程
+- **浏览器工具**：`web.browse` 意图 → `browser.open` 工具调用 → CDP 提取内容
+- **意图识别扩展**：新增 3 条 `web.browse` 本地正则规则
+- **Prompt 扩展**：System Prompt 新增第 6 项能力（浏览金融网站）；意图分类新增 `web.browse` 类型
+- **BrowserToolCard UI**：Thinking 块中渲染浏览器访问状态卡片（URL、摘要、截图标记）
+- **浏览器设置页**：启用开关 + 域名白名单管理（添加/删除）
+
+### 安全设计
+
+- **域名白名单**：默认 8 个金融域名（雪球/东方财富/财联社/同花顺/新浪财经/巨潮资讯/证券时报/和讯），主进程 + 渲染进程双重校验
+- **隐藏窗口隔离**：独立隐藏窗口，session/cookie 与用户主窗口隔离
+- **空闲自动关闭**：60 秒无操作自动销毁浏览器窗口，防内存泄漏
+
+### 技术优化
+
+- **白名单常量统一**：`BROWSER_DOMAIN_WHITELIST` 抽离到 `@shared/constants`，主进程和渲染进程共用
+- **ThinkingStep meta**：新增 `meta` 字段，BrowserToolCard 可从 Thinking 步骤提取浏览器信息
+- **意图测试更新**：新增 5 个 `web.browse` 测试用例，总计 27 个
+
+### 文档
+
+- `docs/prd/v6-prd.md`：v6 产品需求文档
+- `docs/tech/v6-technical-design.md`：v6 技术方案
+- `docs/process/v6-development-plan.md`：v6 开发计划
+
 ## [5.1.1] - 2026-06-11
 
 ### 修复
