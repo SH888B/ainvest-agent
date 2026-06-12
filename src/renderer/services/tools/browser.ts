@@ -13,7 +13,7 @@ import { logInfo, logError } from '../logger/logger'
 /** 浏览器工具定义 */
 export const BROWSER_TOOL_DEFINITION: ToolDefinition = {
   name: 'browser.open',
-  description: '搜索或打开金融网站并提取内容，用于获取实时信息。默认通过百度搜索获取最全面的结果，也支持雪球、东方财富等金融网站。',
+  description: '搜索或打开金融网站并提取内容，用于获取实时信息。默认智能路由到最佳金融网站（财联社/东方财富等），也支持百度等搜索引擎。',
   parameters: {
     type: 'object',
     properties: {
@@ -43,7 +43,7 @@ const SEARCH_URL_TEMPLATES: Record<string, string> = {
   'baidu.com':     'https://www.baidu.com/s?wd={query}',
   'xueqiu.com':    'https://xueqiu.com/k?q={query}',
   'eastmoney.com': 'https://so.eastmoney.com/news/s?keyword={query}',
-  'cls.cn':        'https://www.cls.cn/search?keyword={query}',
+  'cls.cn':        'https://www.cls.cn/searchPage?keyword={query}&type=all',
   'sina.com.cn':   'https://search.sina.com.cn/?q={query}',
   '10jqka.com.cn': 'https://www.10jqka.com.cn/search?q={query}',
   'cninfo.com.cn': 'https://www.cninfo.com.cn/search?keyword={query}',
@@ -51,14 +51,34 @@ const SEARCH_URL_TEMPLATES: Record<string, string> = {
   'hexun.com':     'https://so.hexun.com/?q={query}',
 }
 
-/** 默认搜索域名（百度搜索：SSR 渲染，提取最可靠） */
-const DEFAULT_SEARCH_DOMAIN = 'baidu.com'
+/** 默认搜索域名 */
+const DEFAULT_SEARCH_DOMAIN = 'eastmoney.com'
+
+/**
+ * v6.0.2: 基于搜索关键词智能路由到最佳域名
+ * 根据关键词类型自动选择最合适的金融网站
+ */
+export const queryDomainRoute = (query: string): string => {
+  // 催化/新闻/快讯/受益/概念/热点/动态/资讯 → 财联社
+  if (/催化|新闻|快讯|受益|概念|热点|动态|资讯/i.test(query)) return 'cls.cn'
+  // 研报/深度/分析/调研/研究/机构/评级/目标价 → 东方财富
+  if (/研报|深度|分析|调研|研究|机构|评级|目标价/i.test(query)) return 'eastmoney.com'
+  // 讨论/观点/股吧/社区/评论/看好/看空 → 雪球
+  if (/讨论|观点|股吧|社区|评论|看好|看空/i.test(query)) return 'xueqiu.com'
+  // 公告/监管/披露/证监会/问询/回复 → 巨潮资讯
+  if (/公告|监管|披露|证监会|问询|回复/i.test(query)) return 'cninfo.com.cn'
+  // 默认：东方财富（比百度金融信息更精准、提取更可靠）
+  return 'eastmoney.com'
+}
 
 /**
  * 根据搜索关键词和域名构造搜索 URL
+ * v6.0.2: 无 domain 时走智能路由，而非默认百度
  */
 export const buildSearchUrl = (query: string, domain?: string): string => {
-  const targetDomain = domain && SEARCH_URL_TEMPLATES[domain] ? domain : DEFAULT_SEARCH_DOMAIN
+  const targetDomain = domain && SEARCH_URL_TEMPLATES[domain]
+    ? domain
+    : queryDomainRoute(query)
   const template = SEARCH_URL_TEMPLATES[targetDomain]
   const encodedQuery = encodeURIComponent(query)
   return template.replace('{query}', encodedQuery)

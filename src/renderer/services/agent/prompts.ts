@@ -77,7 +77,7 @@ export const buildIntentPrompt = (text: string): string => {
 - strategy.backtest: 策略回测
 - stock.profile: 个股基本面档案
 - shell.execute: 执行本地命令或脚本（如运行 Python、查看文件等）
-- web.browse: 浏览网页获取实时信息（如搜索新闻、查看最新研报、公告）
+- web.browse: 需要搜索或浏览网页获取实时信息（如搜索新闻、查看最新研报/公告/催化/行业动态、搜索受益公司、了解最新概念板块）
 - session.manage: 对话管理（新建/切换/删除）
 - preference.update: 更新用户偏好
 - general.chat: 闲聊、问候、投资咨询等
@@ -104,7 +104,32 @@ export const SHELL_EXECUTE_EXTRACTION_PROMPT =
   '从用户输入中提取要执行的命令和参数。只返回 JSON 格式：{"command": "命令名", "args": ["参数1", "参数2"], "cwd": "可选的工作目录"}\n\n示例：\n- 输入"运行 test.py" → {"command": "python", "args": ["test.py"]}\n- 输入"查看 workspace 目录" → {"command": "ls", "args": ["workspace"]}\n- 输入"执行 node -e console.log(1)" → {"command": "node", "args": ["-e", "console.log(1)"]}'
 
 export const BROWSER_EXTRACTION_PROMPT =
-  '从用户输入中提取搜索关键词和目标网站。返回 JSON 格式：{"query": "搜索关键词", "domain": "目标域名", "action": "snapshot"}\n\n规则：\n- query：从用户输入中提取核心搜索词，多个词用空格分隔（如"宁德时代 研报 最新"）\n- domain：根据用户指定或内容类型选择最合适的网站域名\n  - 未指定或不确定 → baidu.com（默认，搜索引擎结果最全面、提取最可靠）\n  - 用户明确提到某网站 → 使用该网站域名\n  - 研报/个股分析/财务数据 → eastmoney.com\n  - 新闻/快讯/实时资讯 → cls.cn\n  - 股票讨论/综合信息 → xueqiu.com\n  - 公告/监管信息 → cninfo.com.cn\n- action 默认 snapshot（提取文本），用户要求截图时用 screenshot\n- 如果用户已经给出了完整URL，则直接返回 {"url": "完整URL", "action": "snapshot"}\n\n示例：\n- "查一下宁德时代的研报" → {"query": "宁德时代 研报", "domain": "baidu.com"}\n- "最新财经新闻" → {"query": "财经 新闻 最新", "domain": "baidu.com"}\n- "帮我看看雪球的茅台讨论" → {"query": "贵州茅台", "domain": "xueqiu.com"}\n- "在东方财富搜索茅台新闻" → {"query": "贵州茅台 新闻", "domain": "eastmoney.com"}\n- "打开 https://xueqiu.com/S/SH600519" → {"url": "https://xueqiu.com/S/SH600519", "action": "snapshot"}'
+  `你是一个金融信息搜索专家。从用户输入中提取高质量搜索关键词，并选择最佳搜索渠道。
+
+任务规则：
+1. query 必须去除口语化连接词（"的""一下""有什么""最近""是什么"），只保留核心搜索词
+2. 搜索关键词应覆盖：主体（股票/公司/行业）+ 意图（研报/新闻/催化/公告）+ 范围（最新/相关/受益）
+3. 多个关键词用空格分隔，避免连成一句话
+4. 如果主体是知名公司，可以补充其所属行业关键词（如"宁德时代"→加"锂电池"，"茅台"→加"白酒"），提高搜索精度
+5. domain 选择规则：
+   - 研报/个股分析/财务数据/深度研究/机构评级 → eastmoney.com
+   - 新闻/快讯/实时资讯/催化/行业动态/热点/受益/概念 → cls.cn（财联社）
+   - 股票讨论/观点/社区/股吧 → xueqiu.com
+   - 公告/监管/披露/问询 → cninfo.com.cn
+   - 用户明确指定某网站 → 使用该网站域名
+   - 不确定 → baidu.com（兜底）
+
+返回 JSON 格式（不要加 markdown 代码块标记）：
+{"query": "搜索关键词", "domain": "目标域名", "action": "snapshot"}
+
+示例：
+- "搜一下PCB铜箔的最新催化，有哪些受益公司" → {"query": "PCB 铜箔 最新 催化 受益公司", "domain": "cls.cn"}
+- "搜一下宁德时代最新研报，总结然后给我投资建议" → {"query": "宁德时代 锂电池 最新 研报", "domain": "eastmoney.com"}
+- "最近新能源板块有什么新闻" → {"query": "新能源板块 最新 新闻", "domain": "cls.cn"}
+- "帮我看看雪球的茅台讨论" → {"query": "贵州茅台", "domain": "xueqiu.com"}
+- "在东方财富搜索茅台新闻" → {"query": "贵州茅台 新闻", "domain": "eastmoney.com"}
+- "最新财经新闻" → {"query": "财经 最新 新闻", "domain": "cls.cn"}
+- "打开 https://xueqiu.com/S/SH600519" → {"url": "https://xueqiu.com/S/SH600519", "action": "snapshot"}`
 
 /**
  * v6.1: 浏览器智能操作 Agent Loop 决策 Prompt

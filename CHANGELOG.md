@@ -1,5 +1,15 @@
 # AInvest CLI Agent 更新日志
 
+## [6.0.3] - 2026-06-12
+
+### 优化（搜索体验）
+
+- **搜索意图匹配**：新增口语化搜索兜底规则（`搜一下`/`查查` 等），覆盖 `".{0,30}"` 长尾金融意图词（催化/受益/概念/板块）
+- **关键词清理**：重构 `extractFallbackBrowseQuery` 策略——短语优先匹配（先删"搜一下"再删"搜"），清理`的/是什么/有哪些/有什么`等口语词，拆分粘合后缀（`最新`/`相关`/`讨论`）
+- **智能域名路由**：默认域名从 `baidu.com` 改为 `eastmoney.com`；新增 `queryDomainRoute` 按关键词自动路由（催化→财联社、研报→东方财富、讨论→雪球、公告→巨潮）
+- **参数提取 Prompt**：重写 `BROWSER_EXTRACTION_PROMPT`，去除口语化连接词，补充行业关键词（如宁德时代→锂电池），新增 7 个金融搜索示例
+- **财联社搜索 URL**：修正为 `https://www.cls.cn/searchPage?keyword={query}&type=all`（匹配真实站点 URL）
+
 ## [6.0.2] - 2026-06-12
 
 ### 修复（Browser Agent Bugfix）

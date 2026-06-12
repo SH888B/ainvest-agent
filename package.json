@@ -1,6 +1,6 @@
 {
   "name": "ainvest-electron",
-  "version": "6.0.2",
+  "version": "6.0.3",
   "description": "AInvest Agent Desktop App - LLM驱动的智能投研助手",
   "main": "./out/main/index.js",
   "author": "AInvest Team",
