@@ -1,5 +1,20 @@
 # AInvest CLI Agent 更新日志
 
+## [6.0.2] - 2026-06-12
+
+### 修复（Browser Agent Bugfix）
+
+- **`onSourceUrl is not defined` 运行时错误**：`runAgentTurn` 回调解构中补全 `onSourceUrl`
+- **LLM `finishReason: 'length'` 空 content**：GLM-5.1 推理模型思考 token 耗尽输出配额，`max_tokens` 从 500 调至 1024；prompt 从 ~800 字精简至 ~150 字；AXTree 从 50 节点压缩至 25 节点（优先交互元素），格式从冗长改为紧凑 `nodeId|role|name|val`
+- **浏览器窗口自动弹出**：`setWindowOpenHandler` 拦截新窗口创建，防止 agent click 链接时 Electron 弹出新窗口
+- **来源链接点不开**：从 `window.openExternal()` 切换到 `window.browser.openExternal()`，使用已正确暴露的 IPC 通道
+- **`app:openExternal` 协议安全**：仅允许 `http:`/`https:` 协议，防止 `javascript:`/`file:` 等 XSS 风险
+- **`runBrowserAgentLoop` 错误路径返回类型**：从返回 string 修正为返回 `{ text, sourceUrl, sourceTitle }` 对象
+- **搜索意图正则**：拆分 `/搜[一一下]*索?/g` 为 `/搜索?/g` + `/搜[一一下]*/g`，避免误匹配
+- **Extract 模式标题回退**：使用 `hostname` 作为 fallback 而非空字符串
+- **Markdown 链接**：`<a>` 标签仅 `preventDefault`，不自动调用 `openExternal`
+- **Preload 去重**：移除重复的 `openExternal` 暴露，统一走 `window.browser` API
+
 ## [6.0.0] - 2026-06-11
 
 ### 修复（P0 — 核心体验 Bug）

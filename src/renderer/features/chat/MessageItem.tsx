@@ -1,6 +1,6 @@
 import React from 'react'
 import { ChatMessage } from '@shared/types'
-import { User, Bot, Wrench } from 'lucide-react'
+import { User, Bot, Wrench, ExternalLink } from 'lucide-react'
 import { ThinkingBlock } from './ThinkingBlock'
 import { MarkdownRenderer } from './components/MarkdownRenderer'
 
@@ -54,14 +54,14 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, isStreaming }
 
         {/* 内容气泡 */}
         <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed select-text ${
             isUser
               ? 'bg-primary text-white'
               : 'bg-surface/80 backdrop-blur-sm border border-border-subtle text-text'
           }`}
         >
           {isUser ? (
-            <div className="whitespace-pre-wrap">{message.content}</div>
+            <div className="whitespace-pre-wrap select-text">{message.content}</div>
           ) : isStreaming ? (
             <span className="whitespace-pre-wrap">{message.content}</span>
           ) : (
@@ -84,6 +84,17 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, isStreaming }
             </div>
           )}
         </div>
+
+        {/* 来源链接（web.browse 工具结果） */}
+        {isAssistant && message.sourceUrl && !isStreaming && (
+          <button
+            onClick={() => window.browser.openExternal(message.sourceUrl!)}
+            className="mt-1 flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] text-text-muted hover:text-primary hover:bg-surface/50 transition-colors"
+          >
+            <ExternalLink className="h-2.5 w-2.5" />
+            <span className="truncate max-w-[200px]">{message.sourceTitle || message.sourceUrl}</span>
+          </button>
+        )}
       </div>
     </div>
   )

@@ -46,6 +46,26 @@ export interface BrowserAPI {
     error?: string
   }>
   close: () => Promise<{ success: boolean }>
+  /** v6.1: 启用 CDP debugger */
+  attachCDP: () => Promise<{ success: boolean; cdpAttached?: boolean; error?: string }>
+  /** v6.1: 关闭 CDP debugger */
+  detachCDP: () => Promise<{ success: boolean; error?: string }>
+  /** v6.1: 获取简化 Accessibility Tree */
+  getAXTree: () => Promise<{
+    success: boolean
+    tree: Array<{ nodeId: string; role: string; name: string; value?: string }>
+    error?: string
+  }>
+  /** v6.1: 点击指定元素 */
+  clickElement: (nodeId: string, name?: string, role?: string) => Promise<{ success: boolean; error?: string }>
+  /** v6.1: 在元素中输入文本 */
+  typeText: (nodeId: string, text: string, name?: string, role?: string) => Promise<{ success: boolean; error?: string }>
+  /** v6.1: 滚动页面 */
+  scrollPage: (direction: 'up' | 'down') => Promise<{ success: boolean; error?: string }>
+  /** v6.1: 提取当前页面文本（Agent Loop 中使用） */
+  extractCurrentPageText: () => Promise<string>
+  /** 用系统默认浏览器打开外部链接 */
+  openExternal: (url: string) => Promise<void>
 }
 
 const persistenceAPI: PersistenceAPI = {
@@ -78,6 +98,14 @@ const browserAPI: BrowserAPI = {
   open: (options) => ipcRenderer.invoke('browser:open', options),
   screenshot: () => ipcRenderer.invoke('browser:screenshot'),
   close: () => ipcRenderer.invoke('browser:close'),
+  attachCDP: () => ipcRenderer.invoke('browser:attachCDP'),
+  detachCDP: () => ipcRenderer.invoke('browser:detachCDP'),
+  getAXTree: () => ipcRenderer.invoke('browser:getAXTree'),
+  clickElement: (nodeId, name, role) => ipcRenderer.invoke('browser:clickElement', nodeId, name, role),
+  typeText: (nodeId, text, name, role) => ipcRenderer.invoke('browser:typeText', nodeId, text, name, role),
+  scrollPage: (direction) => ipcRenderer.invoke('browser:scrollPage', direction),
+  extractCurrentPageText: () => ipcRenderer.invoke('browser:extractCurrentPageText'),
+  openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
 }
 
 contextBridge.exposeInMainWorld('persistence', persistenceAPI)

@@ -12,6 +12,9 @@ export interface ChatMessage {
   tool_calls?: ToolCall[]
   tool_call_id?: string
   turnId?: string
+  /** v6.1.1: 浏览器来源信息（web.browse 工具结果） */
+  sourceUrl?: string
+  sourceTitle?: string
 }
 
 /** 工具调用 */
@@ -90,6 +93,44 @@ export interface ToolDefinition {
     properties: Record<string, unknown>
     required?: string[]
   }
+}
+
+/** 浏览器操作模式 */
+export type BrowserMode = 'extract' | 'agent'
+
+/** AXTree 简化节点 */
+export interface AXNode {
+  nodeId: string
+  role: string
+  name: string
+  value?: string
+}
+
+/** Agent Loop 中的 action 类型 */
+export type BrowserAction = 'click' | 'type' | 'scroll' | 'extract' | 'done'
+
+/** LLM 决策结果 */
+export interface BrowserActionDecision {
+  action: BrowserAction
+  nodeId?: string
+  text?: string
+  direction?: 'up' | 'down'
+  reason: string
+}
+
+/** Agent Loop 步骤记录 */
+export interface BrowserAgentStep {
+  step: number
+  action: BrowserAction
+  target?: string
+  result: string
+  timestamp: number
+}
+
+/** CDP 操作结果 */
+export interface CDPOperationResult {
+  success: boolean
+  error?: string
 }
 
 /** 流式响应 chunk */

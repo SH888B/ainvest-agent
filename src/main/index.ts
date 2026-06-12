@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, shell } from 'electron'
 import path from 'path'
 import fs from 'fs/promises'
 import { registerShellIPC } from './ipcHandlers/shell'
@@ -91,6 +91,19 @@ ipcMain.handle('app:getUserDataPath', () => {
 // IPC: 获取应用版本
 ipcMain.handle('app:getVersion', () => {
   return app.getVersion()
+})
+
+// IPC: 用系统默认浏览器打开外部链接（仅允许 http/https 协议）
+ipcMain.handle('app:openExternal', async (_event, url: string) => {
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return
+    }
+    await shell.openExternal(url)
+  } catch {
+    // 忽略无效 URL 或打开失败的错误
+  }
 })
 
 app.whenReady().then(async () => {

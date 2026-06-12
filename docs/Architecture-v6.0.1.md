@@ -597,7 +597,61 @@ export type IntentType =
 
 ---
 
-## 十一、已知问题与 v6.1 方向
+## 十一、v6.1 架构演进：浏览器智能操作模式
+
+> 详见 `docs/tech/v6.1-architecture.md`
+
+### 11.1 核心架构变更
+
+当前浏览器服务是"一次性文本抓取器"（browse → innerText → close），v6.1 新增"智能操作模式"：
+
+```
+当前 (extract mode):              新增 (agent mode):
+browse → innerText → close        browse → attachCDP → [observe → think → act] × N → extract → detachCDP → close
+```
+
+### 11.2 新增模块
+
+| 模块 | 文件 | 说明 |
+|------|------|------|
+| CDP 操作方法 | `browserCDP.ts` +250 行 | `attachCDP/detachCDP/getAXTree/clickElement/typeText/scrollPage` |
+| Agent Loop | `agentEngine.ts` +200 行 | `runBrowserAgentLoop()` observe→think→act 循环 |
+| 操作决策 Prompt | `prompts.ts` +60 行 | `BROWSER_ACTION_PROMPT` |
+| 模式切换 UI | `ChatInput.tsx` +30 行 | 发送按钮上方的 extract/agent Toggle |
+| 新增 IPC | `ipcHandlers/browser.ts` +50 行 | 6 个新 IPC 通道 |
+| 新增类型 | `shared/types/index.ts` +25 行 | AXNode, BrowserMode, BrowserActionDecision 等 |
+
+### 11.3 新增 IPC 通道
+
+| 通道 | 方向 | 用途 |
+|------|------|------|
+| `browser:attachCDP` | R→M | 启用 CDP debugger |
+| `browser:detachCDP` | R→M | 关闭 CDP debugger |
+| `browser:getAXTree` | R→M | 获取简化 Accessibility Tree |
+| `browser:clickElement` | R→M | 点击指定元素 |
+| `browser:typeText` | R→M | 在元素中输入文本 |
+| `browser:scrollPage` | R→M | 滚动页面 |
+
+### 11.4 新增 Store 字段
+
+```typescript
+// usePreferenceStore 新增
+browserMode: 'extract' | 'agent'  // 默认 'extract'
+setBrowserMode: (mode: 'extract' | 'agent') => void
+```
+
+### 11.5 开发计划
+
+| Phase | 时间 | 内容 |
+|-------|------|------|
+| Phase 0 | Day 1 上午 | POC 验证（CDP AXTree 中文 + CDP/executeJS 共存） |
+| Phase 1 | Day 1-2 | CDP 基础设施 + IPC + Toggle UI |
+| Phase 2 | Day 3 | Agent Loop + Prompt + 安全检查 |
+| Phase 3 | Day 4 | 集成测试 + UI 优化 + 日志 |
+
+---
+
+## 十二、已知问题与待办
 
 | 问题 | 说明 | 优先级 |
 |------|------|--------|

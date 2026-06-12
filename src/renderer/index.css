@@ -49,6 +49,13 @@
   ::selection {
     background-color: theme('colors.primary.DEFAULT / 30%');
     color: theme('colors.text.DEFAULT');
+    transition: none;
+  }
+
+  /* 用户消息气泡：bg-primary 上的选中需要更高对比度 */
+  .bg-primary ::selection {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
   }
 
   /* 基础过渡 - 颜色属性默认 150ms */

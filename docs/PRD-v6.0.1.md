@@ -163,6 +163,18 @@ v6 核心目标：**"Agent 不再卡顿，还能上网查资料"**
 
 ## 六、v6.1 迭代方向
 
+### 6.1 核心功能：浏览器智能操作模式
+
+> 详见 `docs/prd/v6.1-prd.md` + `docs/tech/v6.1-architecture.md`
+
+- **模式切换 Toggle**：输入框发送按钮上方，切换"文本提取"/"智能操作"两种浏览器模式
+- **智能操作模式（Agent Mode）**：Agent 可获取 Accessibility Tree、点击链接、输入文本、滚动页面，深入获取二级页面内容
+- **Agent Loop**：observe(AXTree) → think(LLM 决策) → act(click/type/scroll) × N 步
+- **安全约束**：步数上限 5 步 + 30s 超时 + 危险按钮过滤 + 白名单域名校验
+- **CDP 基础设施**：`Accessibility.getFullAXTree` + `Input.dispatchMouseEvent` + `DOM.getBoxModel` 等
+
+### 6.2 其他待办
+
 - 白名单动态增删 + 持久化
 - LLM fetch 超时控制（AbortController）
 - `news.search` 工具注册清理

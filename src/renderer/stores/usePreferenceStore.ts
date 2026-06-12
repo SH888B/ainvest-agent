@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { LLMConfig } from '@shared/types'
+import { LLMConfig, BrowserMode } from '@shared/types'
 import {
   STORAGE_KEYS,
   DEFAULT_BASE_URL,
@@ -21,11 +21,14 @@ interface PreferenceState {
   autoArchiveOnNewSession: boolean
   /** v6.0.1: 浏览器自动化启用开关（默认开启） */
   browserEnabled: boolean
+  /** v6.1: 浏览器操作模式 extract(文本提取) | agent(智能操作)，默认 extract */
+  browserMode: BrowserMode
 
   setLLMConfig: (config: Partial<LLMConfig>) => void
   validateConfig: () => boolean
   setAutoArchiveOnNewSession: (val: boolean) => void
   setBrowserEnabled: (val: boolean) => void
+  setBrowserMode: (mode: BrowserMode) => void
 }
 
 const defaultConfig: LLMConfig = {
@@ -44,6 +47,7 @@ export const usePreferenceStore = create<PreferenceState>()(
       isConfigValid: false,
       autoArchiveOnNewSession: false,
       browserEnabled: true,
+      browserMode: 'extract' as BrowserMode,
 
       setLLMConfig: (config: Partial<LLMConfig>) => {
         set((state) => ({
@@ -64,6 +68,10 @@ export const usePreferenceStore = create<PreferenceState>()(
 
       setBrowserEnabled: (val: boolean) => {
         set({ browserEnabled: val })
+      },
+
+      setBrowserMode: (mode: BrowserMode) => {
+        set({ browserMode: mode })
       },
     }),
     {

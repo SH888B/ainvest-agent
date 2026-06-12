@@ -15,6 +15,8 @@ interface ChatState {
   getMessages: (sessionId: string) => ChatMessage[]
   addMessage: (sessionId: string, message: ChatMessage) => void
   appendAssistantContent: (sessionId: string, content: string) => void
+  /** v6.1.1: 设置最新 assistant 消息的来源信息 */
+  setAssistantSource: (sessionId: string, sourceUrl: string, sourceTitle: string) => void
   clearMessages: (sessionId: string) => void
   setLoading: (loading: boolean) => void
 }
@@ -117,6 +119,24 @@ const chatStore = create<ChatState>()(
               [sessionId]: [...msgs, { role: 'assistant', content }],
             },
           }
+        })
+      },
+
+      setAssistantSource: (sessionId: string, sourceUrl: string, sourceTitle: string) => {
+        set((state) => {
+          const msgs = state.messagesBySession[sessionId] || []
+          const last = msgs[msgs.length - 1]
+          if (last && last.role === 'assistant') {
+            const updated = [...msgs]
+            updated[updated.length - 1] = { ...last, sourceUrl, sourceTitle }
+            return {
+              messagesBySession: {
+                ...state.messagesBySession,
+                [sessionId]: updated,
+              },
+            }
+          }
+          return state
         })
       },
 

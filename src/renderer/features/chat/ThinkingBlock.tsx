@@ -15,6 +15,12 @@ const STEP_LABELS: Record<ThinkingStep['type'], string> = {
   'tool.result': '已获取工具结果',
   'llm.generating': '正在生成回复...',
   'llm.streaming': '正在输出回复...',
+  'browser.opening': '正在打开页面...',
+  'browser.opened': '已打开页面',
+  'browser.observing': '正在观察页面...',
+  'browser.thinking': 'Agent 正在决策...',
+  'browser.action': '执行操作中...',
+  'browser.timeout': '操作超时',
 }
 
 const StepIcon: React.FC<{ status: ThinkingStep['status'] }> = ({ status }) => {

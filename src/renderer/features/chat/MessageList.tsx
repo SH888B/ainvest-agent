@@ -55,7 +55,7 @@ export const MessageList: React.FC = () => {
   const lastIndex = messages.length - 1
 
   return (
-    <div ref={scrollRef} className="h-full overflow-y-auto p-4">
+    <div ref={scrollRef} className="h-full overflow-y-auto p-4 select-text">
       <div className="space-y-4">
         {messages.map((msg, index) => (
           <MessageItem

@@ -26,7 +26,7 @@ const EMPTY_MESSAGES: ChatMessage[] = []
 export const ChatPanel: React.FC = () => {
   const { isConfigValid, llmConfig } = usePreferenceStore()
   const { currentSessionId, sessions, createSession, autoRenameSession } = useSessionStore()
-  const { getMessages, addMessage, appendAssistantContent, setLoading } = useChatStore()
+  const { getMessages, addMessage, appendAssistantContent, setAssistantSource, setLoading } = useChatStore()
   const { memory } = useMemoryStore()
   const { clearTurn } = useThinkingStore()
   const { toggle: toggleDevTool } = useDevToolStore()
@@ -122,6 +122,9 @@ export const ChatPanel: React.FC = () => {
         },
         onToolResult: (result) => {
           console.log(`[Agent] 工具结果:`, result)
+        },
+        onSourceUrl: (url, title) => {
+          setAssistantSource(sessionId, url, title)
         },
         onError: (error) => {
           appendAssistantContent(sessionId, `\n\n[错误] ${error}`)
