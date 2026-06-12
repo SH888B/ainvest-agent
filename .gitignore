@@ -48,3 +48,6 @@ test/results-*.txt
 build-output.*
 build-log.txt
 eslint-check.txt
+
+# Archived docs (historical, tracked by Git only)
+docs/archive/
