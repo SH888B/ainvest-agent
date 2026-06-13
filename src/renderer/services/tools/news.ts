@@ -5,7 +5,7 @@ import { mockNewsSearch } from '../mocks'
  * 新闻搜索工具
  */
 registerTool(
-  'news.search',
+  'web.browse',
   'news.search',
   '搜索股票或行业新闻',
   (args: Record<string, unknown>) => {

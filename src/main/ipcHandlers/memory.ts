@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { VectorRecord } from '../../../shared/types/memory'
+import { VectorRecord } from '../../shared/types/memory'
 import * as vectorStore from '../services/vectorStore'
 
 /**

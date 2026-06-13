@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, type PersistStorage, type StorageValue } from 'zustand/middleware'
 import { ChatMessage } from '@shared/types'
 
 /**
@@ -26,7 +26,7 @@ interface ChatState {
  * v6: debounce 缩短到 100ms，在减少写入频率和防止消息丢失之间取得平衡
  * 同时支持 flushStorage 事件立即写入，保证 beforeunload 时数据不丢失
  */
-const createDebouncedStorage = (delay = 100) => {
+const createDebouncedStorage = (delay = 100): PersistStorage<Partial<ChatState>> => {
   let timer: ReturnType<typeof setTimeout> | null = null
   let pendingName: string | null = null
   let pendingValue: string | null = null
@@ -36,7 +36,7 @@ const createDebouncedStorage = (delay = 100) => {
       clearTimeout(timer)
       timer = null
     }
-    if (pendingName !== null) {
+    if (pendingName !== null && pendingValue !== null) {
       localStorage.setItem(pendingName, pendingValue)
       pendingName = null
       pendingValue = null
@@ -49,21 +49,28 @@ const createDebouncedStorage = (delay = 100) => {
   }
 
   return {
-    getItem: (name: string): string | null => {
-      return localStorage.getItem(name)
+    getItem: (name) => {
+      const str = localStorage.getItem(name)
+      if (!str) return null
+      try {
+        return JSON.parse(str) as StorageValue<Partial<ChatState>>
+      } catch {
+        return null
+      }
     },
-    setItem: (name: string, value: string): void => {
+    setItem: (name, value) => {
       if (timer) clearTimeout(timer)
+      const serialized = JSON.stringify(value)
       pendingName = name
-      pendingValue = value
+      pendingValue = serialized
       timer = setTimeout(() => {
-        localStorage.setItem(name, value)
+        localStorage.setItem(name, serialized)
         pendingName = null
         pendingValue = null
         timer = null
       }, delay)
     },
-    removeItem: (name: string): void => localStorage.removeItem(name),
+    removeItem: (name) => localStorage.removeItem(name),
   }
 }
 
@@ -149,7 +156,7 @@ const chatStore = create<ChatState>()(
     {
       name: 'ainvest-chat-messages',
       storage: createDebouncedStorage(100),
-      partialize: (state) => ({
+      partialize: (state: ChatState): Partial<ChatState> => ({
         messagesBySession: state.messagesBySession,
       }),
     }
