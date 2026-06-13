@@ -1,4 +1,5 @@
 import { ipcMain } from 'electron'
+import { VectorRecord } from '../../../shared/types/memory'
 import * as vectorStore from '../services/vectorStore'
 
 /**
@@ -9,12 +10,12 @@ import * as vectorStore from '../services/vectorStore'
 export const registerMemoryIPC = (): void => {
   ipcMain.handle('memory:insertItem', async (_event, record: unknown) => {
     if (!record || typeof record !== 'object') throw new Error('Invalid record')
-    await vectorStore.insertItem(record as any)
+    await vectorStore.insertItem(record as VectorRecord)
   })
 
   ipcMain.handle('memory:insertItems', async (_event, records: unknown) => {
     if (!Array.isArray(records)) throw new Error('Invalid records: expected array')
-    await vectorStore.insertItems(records as any[])
+    await vectorStore.insertItems(records as VectorRecord[])
   })
 
   ipcMain.handle('memory:queryItems', async (_event, vector: unknown, topK: unknown) => {

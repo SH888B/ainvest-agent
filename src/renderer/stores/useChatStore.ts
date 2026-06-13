@@ -29,7 +29,7 @@ interface ChatState {
 const createDebouncedStorage = (delay = 100) => {
   let timer: ReturnType<typeof setTimeout> | null = null
   let pendingName: string | null = null
-  let pendingValue: unknown = null
+  let pendingValue: string | null = null
 
   const flush = () => {
     if (timer) {
@@ -37,7 +37,7 @@ const createDebouncedStorage = (delay = 100) => {
       timer = null
     }
     if (pendingName !== null) {
-      localStorage.setItem(pendingName, JSON.stringify(pendingValue))
+      localStorage.setItem(pendingName, pendingValue)
       pendingName = null
       pendingValue = null
     }
@@ -49,27 +49,21 @@ const createDebouncedStorage = (delay = 100) => {
   }
 
   return {
-    getItem: (name: string) => {
-      const str = localStorage.getItem(name)
-      if (!str) return null
-      try {
-        return JSON.parse(str)
-      } catch {
-        return null
-      }
+    getItem: (name: string): string | null => {
+      return localStorage.getItem(name)
     },
-    setItem: (name: string, value: unknown) => {
+    setItem: (name: string, value: string): void => {
       if (timer) clearTimeout(timer)
       pendingName = name
       pendingValue = value
       timer = setTimeout(() => {
-        localStorage.setItem(name, JSON.stringify(value))
+        localStorage.setItem(name, value)
         pendingName = null
         pendingValue = null
         timer = null
       }, delay)
     },
-    removeItem: (name: string) => localStorage.removeItem(name),
+    removeItem: (name: string): void => localStorage.removeItem(name),
   }
 }
 
@@ -154,7 +148,7 @@ const chatStore = create<ChatState>()(
     }),
     {
       name: 'ainvest-chat-messages',
-      storage: createDebouncedStorage(100) as any,
+      storage: createDebouncedStorage(100),
       partialize: (state) => ({
         messagesBySession: state.messagesBySession,
       }),

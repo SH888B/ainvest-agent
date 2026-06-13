@@ -33,7 +33,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({ onSend, input, setInput, i
         textareaRef.current?.setSelectionRange(start, end)
       })
     }
-  }, [setInput])
+  }, [setInput, textareaRef])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {

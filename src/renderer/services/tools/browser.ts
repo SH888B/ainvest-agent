@@ -51,9 +51,6 @@ const SEARCH_URL_TEMPLATES: Record<string, string> = {
   'hexun.com':     'https://so.hexun.com/?q={query}',
 }
 
-/** 默认搜索域名 */
-const DEFAULT_SEARCH_DOMAIN = 'eastmoney.com'
-
 /**
  * v6.0.2: 基于搜索关键词智能路由到最佳域名
  * 根据关键词类型自动选择最合适的金融网站

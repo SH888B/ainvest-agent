@@ -406,7 +406,7 @@ const extractFallbackBrowseQuery = (input: string): string => {
 
   // 5. 移除标点 + 清理残留虚词
   text = text
-    .replace(/[，。！？、；：""''（）\[\]【】]/g, ' ')
+    .replace(/[，。！？、；：""''（）[\]【】]/g, ' ')
     .replace(/和[给出]/g, ' ')
     .replace(/的/g, ' ')          // 移除所有"的"（之前只移除句首句尾，不够）
 
@@ -439,7 +439,7 @@ const extractFallbackBrowseQuery = (input: string): string => {
 
   if (unique.length === 0) {
     // 兜底：去标点后取前 30 字
-    const fallback = input.replace(/[，。！？、；：""''（）\[\]【】]/g, ' ').trim()
+    const fallback = input.replace(/[，。！？、；：""''（）[\]【】]/g, ' ').trim()
     return fallback.length >= 2 ? fallback.slice(0, 30) : input.slice(0, 20)
   }
 

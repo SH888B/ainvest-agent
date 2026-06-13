@@ -530,7 +530,7 @@ export class BrowserCDPService {
    * @param name AXTree 节点的可访问性名称（用于 DOM 定位 input）
    * @param role AXTree 节点的 role
    */
-  async typeText(nodeId: string, text: string, name?: string, role?: string): Promise<CDPOperationResult> {
+  async typeText(nodeId: string, text: string, name?: string, _role?: string): Promise<CDPOperationResult> {
     if (!this.window) {
       return { success: false, error: '浏览器窗口未打开' }
     }

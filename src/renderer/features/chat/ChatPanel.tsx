@@ -25,7 +25,7 @@ const EMPTY_MESSAGES: ChatMessage[] = []
  */
 export const ChatPanel: React.FC = () => {
   const { isConfigValid, llmConfig } = usePreferenceStore()
-  const { currentSessionId, sessions, createSession, autoRenameSession } = useSessionStore()
+  const { currentSessionId, createSession, autoRenameSession } = useSessionStore()
   const { getMessages, addMessage, appendAssistantContent, setAssistantSource, setLoading } = useChatStore()
   const { memory } = useMemoryStore()
   const { clearTurn } = useThinkingStore()
@@ -135,7 +135,7 @@ export const ChatPanel: React.FC = () => {
         },
       })
     },
-    [input, currentSessionId, sessions, createSession, addMessage, setLoading, getMessages, llmConfig, isConfigValid, memory, appendAssistantContent, autoRenameSession, clearTurn]
+    [input, currentSessionId, createSession, addMessage, setLoading, getMessages, llmConfig, isConfigValid, memory, appendAssistantContent, autoRenameSession, clearTurn, setAssistantSource]
   )
 
   return (
