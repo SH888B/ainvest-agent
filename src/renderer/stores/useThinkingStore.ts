@@ -11,6 +11,12 @@ export type ThinkingStepType =
   | 'tool.result'
   | 'llm.generating'
   | 'llm.streaming'
+  | 'browser.opening'
+  | 'browser.opened'
+  | 'browser.observing'
+  | 'browser.thinking'
+  | 'browser.action'
+  | 'browser.timeout'
 
 /**
  * Thinking 步骤状态
