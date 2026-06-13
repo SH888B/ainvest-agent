@@ -22,6 +22,7 @@ export const SessionSidebar: React.FC = () => {
   const {
     sessions,
     currentSessionId,
+    isCreating,
     createSession,
     switchSession,
     renameSession,
@@ -29,7 +30,7 @@ export const SessionSidebar: React.FC = () => {
     updateArchivedCount,
   } = useSessionStore()
   const { getMessages, clearMessages } = useChatStore()
-  const { llmConfig, isConfigValid } = usePreferenceStore()
+  const { llmConfig, isConfigValid, autoArchiveOnNewSession } = usePreferenceStore()
   const { memory, updateMemory, saveMemory } = useMemoryStore()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
@@ -121,30 +122,34 @@ export const SessionSidebar: React.FC = () => {
     }
   }
 
-  /** 新建 Session（自动归档上一个） */
+  /** 新建 Session（根据设置决定是否自动归档上一个） */
   const handleCreateSession = async () => {
-    // 如果有当前 Session，先自动归档
-    if (currentSessionId && isConfigValid) {
-      const messages = getMessages(currentSessionId)
-      const session = sessions.find((s) => s.id === currentSessionId)
+    const previousSessionId = currentSessionId
+
+    const newId = createSession()
+    if (!newId) return // v6: store 级防竞态拦截
+
+    // v6.0.1: 仅在开关开启时自动归档
+    if (autoArchiveOnNewSession && previousSessionId && isConfigValid) {
+      const messages = getMessages(previousSessionId)
+      const session = sessions.find((s) => s.id === previousSessionId)
       const archivedCount = session?.archivedMessageCount || 0
 
       if (messages.length > archivedCount) {
-        try {
-          await archiveSession({
-            sessionId: currentSessionId,
-            messages,
-            archivedMessageCount: archivedCount,
-            llmConfig,
+        archiveSession({
+          sessionId: previousSessionId,
+          messages,
+          archivedMessageCount: archivedCount,
+          llmConfig,
+        })
+          .then(() => {
+            updateArchivedCount(previousSessionId, messages.length)
           })
-          updateArchivedCount(currentSessionId, messages.length)
-        } catch (err) {
-          console.error('[SessionSidebar] 自动归档失败:', err)
-        }
+          .catch((err) => {
+            console.error('[SessionSidebar] 自动归档失败:', err)
+          })
       }
     }
-
-    createSession()
   }
 
   const currentUnarchived = currentSessionId ? getUnarchivedCount(currentSessionId) : 0
@@ -157,10 +162,15 @@ export const SessionSidebar: React.FC = () => {
         <h2 className="text-sm font-semibold text-text">对话历史</h2>
         <button
           onClick={handleCreateSession}
-          className="flex items-center rounded p-1 text-text-secondary hover:bg-surface-hover hover:text-text transition-colors duration-150"
+          disabled={isCreating}
+          className="flex items-center rounded p-1 text-text-secondary hover:bg-surface-hover hover:text-text transition-colors duration-150 disabled:opacity-50"
           title="新建对话"
         >
-          <Plus className="h-4 w-4" />
+          {isCreating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4" />
+          )}
         </button>
       </div>
 
@@ -210,7 +220,11 @@ export const SessionSidebar: React.FC = () => {
 
         {/* 未归档消息数提示 */}
         {currentSessionId && currentUnarchived > 0 && (
-          <div className="text-center text-xs text-text-muted">
+          <div className={`text-center text-xs ${
+            currentUnarchived > 5
+              ? 'text-warning font-semibold'
+              : 'text-text-muted'
+          }`}>
             未归档消息: {currentUnarchived} 条
           </div>
         )}

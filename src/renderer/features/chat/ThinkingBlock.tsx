@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useThinkingStore, ThinkingStep } from '../../stores/useThinkingStore'
 import { ChevronDown, ChevronUp, Check, X, Loader2 } from 'lucide-react'
+import { BrowserToolCard, BrowserToolStatus } from './BrowserToolCard'
 
 interface ThinkingBlockProps {
   turnId: string
@@ -14,6 +15,12 @@ const STEP_LABELS: Record<ThinkingStep['type'], string> = {
   'tool.result': '已获取工具结果',
   'llm.generating': '正在生成回复...',
   'llm.streaming': '正在输出回复...',
+  'browser.opening': '正在打开页面...',
+  'browser.opened': '已打开页面',
+  'browser.observing': '正在观察页面...',
+  'browser.thinking': 'Agent 正在决策...',
+  'browser.action': '执行操作中...',
+  'browser.timeout': '操作超时',
 }
 
 const StepIcon: React.FC<{ status: ThinkingStep['status'] }> = ({ status }) => {
@@ -26,6 +33,34 @@ const StepIcon: React.FC<{ status: ThinkingStep['status'] }> = ({ status }) => {
       return <X className="h-3 w-3 text-red-500" />
     default:
       return <div className="h-3 w-3 rounded-full border border-text-muted/30" />
+  }
+}
+
+/**
+ * 判断步骤是否为浏览器工具调用，并提取 BrowserToolCard 所需 props
+ */
+const getBrowserCardProps = (step: ThinkingStep): React.ComponentProps<typeof BrowserToolCard> | null => {
+  const meta = step.meta as Record<string, unknown> | undefined
+  if (!meta || meta.tool !== 'web.browse') return null
+
+  const url = String(meta.url || '')
+  const action = String(meta.action || 'snapshot')
+  const resultPreview = meta.resultPreview ? String(meta.resultPreview) : undefined
+  const hasError = meta.hasError === true
+
+  let status: BrowserToolStatus = 'loading'
+  if (step.type === 'tool.result') {
+    status = hasError ? 'error' : 'success'
+  } else if (step.type === 'tool.calling') {
+    status = step.status === 'failed' ? 'error' : step.status === 'completed' ? 'success' : 'loading'
+  }
+
+  return {
+    url,
+    status,
+    textPreview: status === 'success' ? resultPreview : undefined,
+    hasScreenshot: status === 'success' && action === 'screenshot',
+    error: hasError && step.type === 'tool.result' ? '工具执行失败' : undefined,
   }
 }
 
@@ -82,24 +117,33 @@ export const ThinkingBlock: React.FC<ThinkingBlockProps> = React.memo(
         {/* 展开态步骤列表 */}
         {expanded && (
           <div className="mt-2 space-y-1.5 border-t border-border/30 pt-2">
-            {steps.map((step, index) => (
-              <div key={index} className="flex items-start gap-2">
-                <StepIcon status={step.status} />
-                <div className="flex-1">
-                  <div className="text-text-muted">
-                    {step.message || STEP_LABELS[step.type]}
-                  </div>
-                  {step.detail && (
-                    <div className="mt-0.5 text-text-muted/60">
-                      {step.detail}
+            {steps.map((step, index) => {
+              const browserProps = getBrowserCardProps(step)
+              return (
+                <div key={index} className="flex items-start gap-2">
+                  <StepIcon status={step.status} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-text-muted">
+                      {step.message || STEP_LABELS[step.type]}
                     </div>
-                  )}
-                  {step.error && (
-                    <div className="mt-0.5 text-red-400">{step.error}</div>
-                  )}
+                    {step.detail && !browserProps && (
+                      <div className="mt-0.5 text-text-muted/60">
+                        {step.detail}
+                      </div>
+                    )}
+                    {step.error && (
+                      <div className="mt-0.5 text-red-400">{step.error}</div>
+                    )}
+                    {/* 浏览器工具卡片 */}
+                    {browserProps && (
+                      <div className="mt-1.5">
+                        <BrowserToolCard {...browserProps} />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

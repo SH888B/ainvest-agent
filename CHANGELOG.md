@@ -1,5 +1,68 @@
 # AInvest CLI Agent 更新日志
 
+## [6.0.3] - 2026-06-12
+
+### 优化（搜索体验）
+
+- **搜索意图匹配**：新增口语化搜索兜底规则（`搜一下`/`查查` 等），覆盖 `".{0,30}"` 长尾金融意图词（催化/受益/概念/板块）
+- **关键词清理**：重构 `extractFallbackBrowseQuery` 策略——短语优先匹配（先删"搜一下"再删"搜"），清理`的/是什么/有哪些/有什么`等口语词，拆分粘合后缀（`最新`/`相关`/`讨论`）
+- **智能域名路由**：默认域名从 `baidu.com` 改为 `eastmoney.com`；新增 `queryDomainRoute` 按关键词自动路由（催化→财联社、研报→东方财富、讨论→雪球、公告→巨潮）
+- **参数提取 Prompt**：重写 `BROWSER_EXTRACTION_PROMPT`，去除口语化连接词，补充行业关键词（如宁德时代→锂电池），新增 7 个金融搜索示例
+- **财联社搜索 URL**：修正为 `https://www.cls.cn/searchPage?keyword={query}&type=all`（匹配真实站点 URL）
+
+## [6.0.2] - 2026-06-12
+
+### 修复（Browser Agent Bugfix）
+
+- **`onSourceUrl is not defined` 运行时错误**：`runAgentTurn` 回调解构中补全 `onSourceUrl`
+- **LLM `finishReason: 'length'` 空 content**：GLM-5.1 推理模型思考 token 耗尽输出配额，`max_tokens` 从 500 调至 1024；prompt 从 ~800 字精简至 ~150 字；AXTree 从 50 节点压缩至 25 节点（优先交互元素），格式从冗长改为紧凑 `nodeId|role|name|val`
+- **浏览器窗口自动弹出**：`setWindowOpenHandler` 拦截新窗口创建，防止 agent click 链接时 Electron 弹出新窗口
+- **来源链接点不开**：从 `window.openExternal()` 切换到 `window.browser.openExternal()`，使用已正确暴露的 IPC 通道
+- **`app:openExternal` 协议安全**：仅允许 `http:`/`https:` 协议，防止 `javascript:`/`file:` 等 XSS 风险
+- **`runBrowserAgentLoop` 错误路径返回类型**：从返回 string 修正为返回 `{ text, sourceUrl, sourceTitle }` 对象
+- **搜索意图正则**：拆分 `/搜[一一下]*索?/g` 为 `/搜索?/g` + `/搜[一一下]*/g`，避免误匹配
+- **Extract 模式标题回退**：使用 `hostname` 作为 fallback 而非空字符串
+- **Markdown 链接**：`<a>` 标签仅 `preventDefault`，不自动调用 `openExternal`
+- **Preload 去重**：移除重复的 `openExternal` 暴露，统一走 `window.browser` API
+
+## [6.0.0] - 2026-06-11
+
+### 修复（P0 — 核心体验 Bug）
+
+- **MessageList 订阅模式修复**：`useMemo + getMessages` 改为 zustand 直接选择器，解决流式输出卡住和多轮对话消息不显示的根因
+- **ChatPanel messages 引用修复**：同步修复 ChatPanel 中的 `getMessages()` 反模式
+- **ChatStore 持久化优化**：debounce 从 800ms 缩短到 100ms；新增 `flushStorage` 事件机制，`beforeunload` 时立即写入，确保数据不丢失
+- **Session 创建竞态修复**：新增 `isCreating` loading 态，防重复点击；异步归档放后台不阻塞 UI
+
+### 新增功能（P1 — 浏览器自动化）
+
+- **BrowserCDPService**：基于 Electron CDP 的浏览器自动化服务，复用自带 Chromium，0 额外体积
+- **IPC 通道**：`browser:open`、`browser:screenshot`、`browser:close` 三个 IPC 通道
+- **Preload API**：`window.browser` 安全暴露给渲染进程
+- **浏览器工具**：`web.browse` 意图 → `browser.open` 工具调用 → CDP 提取内容
+- **意图识别扩展**：新增 3 条 `web.browse` 本地正则规则
+- **Prompt 扩展**：System Prompt 新增第 6 项能力（浏览金融网站）；意图分类新增 `web.browse` 类型
+- **BrowserToolCard UI**：Thinking 块中渲染浏览器访问状态卡片（URL、摘要、截图标记）
+- **浏览器设置页**：启用开关 + 域名白名单管理（添加/删除）
+
+### 安全设计
+
+- **域名白名单**：默认 8 个金融域名（雪球/东方财富/财联社/同花顺/新浪财经/巨潮资讯/证券时报/和讯），主进程 + 渲染进程双重校验
+- **隐藏窗口隔离**：独立隐藏窗口，session/cookie 与用户主窗口隔离
+- **空闲自动关闭**：60 秒无操作自动销毁浏览器窗口，防内存泄漏
+
+### 技术优化
+
+- **白名单常量统一**：`BROWSER_DOMAIN_WHITELIST` 抽离到 `@shared/constants`，主进程和渲染进程共用
+- **ThinkingStep meta**：新增 `meta` 字段，BrowserToolCard 可从 Thinking 步骤提取浏览器信息
+- **意图测试更新**：新增 5 个 `web.browse` 测试用例，总计 27 个
+
+### 文档
+
+- `docs/prd/v6-prd.md`：v6 产品需求文档
+- `docs/tech/v6-technical-design.md`：v6 技术方案
+- `docs/process/v6-development-plan.md`：v6 开发计划
+
 ## [5.1.1] - 2026-06-11
 
 ### 修复

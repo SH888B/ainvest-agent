@@ -32,6 +32,42 @@ export interface MemoryAPI {
   upsertItem: (id: string, vector: number[], metadata: unknown) => Promise<void>
 }
 
+export interface BrowserAPI {
+  open: (options: { url: string }) => Promise<{
+    success: boolean
+    title: string
+    url: string
+    text: string
+    error?: string
+  }>
+  screenshot: () => Promise<{
+    success: boolean
+    dataUrl: string
+    error?: string
+  }>
+  close: () => Promise<{ success: boolean }>
+  /** v6.1: 启用 CDP debugger */
+  attachCDP: () => Promise<{ success: boolean; cdpAttached?: boolean; error?: string }>
+  /** v6.1: 关闭 CDP debugger */
+  detachCDP: () => Promise<{ success: boolean; error?: string }>
+  /** v6.1: 获取简化 Accessibility Tree */
+  getAXTree: () => Promise<{
+    success: boolean
+    tree: Array<{ nodeId: string; role: string; name: string; value?: string }>
+    error?: string
+  }>
+  /** v6.1: 点击指定元素 */
+  clickElement: (nodeId: string, name?: string, role?: string) => Promise<{ success: boolean; error?: string }>
+  /** v6.1: 在元素中输入文本 */
+  typeText: (nodeId: string, text: string, name?: string, role?: string) => Promise<{ success: boolean; error?: string }>
+  /** v6.1: 滚动页面 */
+  scrollPage: (direction: 'up' | 'down') => Promise<{ success: boolean; error?: string }>
+  /** v6.1: 提取当前页面文本（Agent Loop 中使用） */
+  extractCurrentPageText: () => Promise<string>
+  /** 用系统默认浏览器打开外部链接 */
+  openExternal: (url: string) => Promise<void>
+}
+
 const persistenceAPI: PersistenceAPI = {
   readFile: (filePath: string) => ipcRenderer.invoke('persistence:readFile', filePath),
   writeFile: (filePath: string, content: string) =>
@@ -58,10 +94,25 @@ const memoryAPI: MemoryAPI = {
   upsertItem: (id, vector, metadata) => ipcRenderer.invoke('memory:upsertItem', id, vector, metadata),
 }
 
+const browserAPI: BrowserAPI = {
+  open: (options) => ipcRenderer.invoke('browser:open', options),
+  screenshot: () => ipcRenderer.invoke('browser:screenshot'),
+  close: () => ipcRenderer.invoke('browser:close'),
+  attachCDP: () => ipcRenderer.invoke('browser:attachCDP'),
+  detachCDP: () => ipcRenderer.invoke('browser:detachCDP'),
+  getAXTree: () => ipcRenderer.invoke('browser:getAXTree'),
+  clickElement: (nodeId, name, role) => ipcRenderer.invoke('browser:clickElement', nodeId, name, role),
+  typeText: (nodeId, text, name, role) => ipcRenderer.invoke('browser:typeText', nodeId, text, name, role),
+  scrollPage: (direction) => ipcRenderer.invoke('browser:scrollPage', direction),
+  extractCurrentPageText: () => ipcRenderer.invoke('browser:extractCurrentPageText'),
+  openExternal: (url: string) => ipcRenderer.invoke('app:openExternal', url),
+}
+
 contextBridge.exposeInMainWorld('persistence', persistenceAPI)
 contextBridge.exposeInMainWorld('appAPI', appAPI)
 contextBridge.exposeInMainWorld('shell', shellAPI)
 contextBridge.exposeInMainWorld('memoryAPI', memoryAPI)
+contextBridge.exposeInMainWorld('browser', browserAPI)
 
 // 类型声明扩展
 declare global {
@@ -70,5 +121,6 @@ declare global {
     appAPI: AppAPI
     shell: ShellAPI
     memoryAPI: MemoryAPI
+    browser: BrowserAPI
   }
 }

@@ -5,7 +5,7 @@ import { MemoryFragment } from '../../../shared/types/memory'
  * Prompt 版本号
  * v5.0.0: 增加语义记忆注入
  */
-export const PROMPT_VERSION = 'v5.0.0'
+export const PROMPT_VERSION = 'v6.0.0'
 
 /**
  * 构建基础 System Prompt
@@ -21,6 +21,7 @@ export const buildSystemPrompt = (memory?: UserMemory, relatedMemories?: MemoryF
 3. 对投资策略进行历史回测
 4. 查看个股基本面档案
 5. 执行本地命令或脚本（如 python、node 等）——当用户要求运行命令时，你应该直接执行并返回结果
+6. 浏览金融网站获取实时信息（如雪球、东方财富、财联社）——当用户询问最新研报、公告、新闻时，你可以打开相关网页提取内容
 
 请用中文回答，保持专业、简洁、准确。如果不确定用户意图，可以礼貌询问澄清。`
 
@@ -73,10 +74,10 @@ export const buildIntentPrompt = (text: string): string => {
 
 可选类型：
 - market.query: 查询股票行情、价格、涨跌幅等
-- news.search: 搜索股票或行业新闻
 - strategy.backtest: 策略回测
 - stock.profile: 个股基本面档案
 - shell.execute: 执行本地命令或脚本（如运行 Python、查看文件等）
+- web.browse: 需要搜索或浏览网页获取实时信息（如搜索新闻、查看最新研报/公告/催化/行业动态、搜索受益公司、了解最新概念板块）
 - session.manage: 对话管理（新建/切换/删除）
 - preference.update: 更新用户偏好
 - general.chat: 闲聊、问候、投资咨询等
@@ -93,9 +94,6 @@ export const buildIntentPrompt = (text: string): string => {
 export const MARKET_QUERY_EXTRACTION_PROMPT =
   '从用户输入中提取股票代码（如 600519、AAPL）。只返回 JSON 格式：{"symbol": "股票代码"}'
 
-export const NEWS_SEARCH_EXTRACTION_PROMPT =
-  '从用户输入中提取搜索关键词。只返回 JSON 格式：{"keyword": "关键词", "limit": 5}'
-
 export const STRATEGY_BACKTEST_EXTRACTION_PROMPT =
   '从用户输入中提取策略名称、股票代码、开始日期、结束日期。只返回 JSON 格式：{"strategyName": "策略名", "symbol": "代码", "startDate": "YYYY-MM-DD", "endDate": "YYYY-MM-DD"}'
 
@@ -104,3 +102,48 @@ export const STOCK_PROFILE_EXTRACTION_PROMPT =
 
 export const SHELL_EXECUTE_EXTRACTION_PROMPT =
   '从用户输入中提取要执行的命令和参数。只返回 JSON 格式：{"command": "命令名", "args": ["参数1", "参数2"], "cwd": "可选的工作目录"}\n\n示例：\n- 输入"运行 test.py" → {"command": "python", "args": ["test.py"]}\n- 输入"查看 workspace 目录" → {"command": "ls", "args": ["workspace"]}\n- 输入"执行 node -e console.log(1)" → {"command": "node", "args": ["-e", "console.log(1)"]}'
+
+export const BROWSER_EXTRACTION_PROMPT =
+  `你是一个金融信息搜索专家。从用户输入中提取高质量搜索关键词，并选择最佳搜索渠道。
+
+任务规则：
+1. query 必须去除口语化连接词（"的""一下""有什么""最近""是什么"），只保留核心搜索词
+2. 搜索关键词应覆盖：主体（股票/公司/行业）+ 意图（研报/新闻/催化/公告）+ 范围（最新/相关/受益）
+3. 多个关键词用空格分隔，避免连成一句话
+4. 如果主体是知名公司，可以补充其所属行业关键词（如"宁德时代"→加"锂电池"，"茅台"→加"白酒"），提高搜索精度
+5. domain 选择规则：
+   - 研报/个股分析/财务数据/深度研究/机构评级 → eastmoney.com
+   - 新闻/快讯/实时资讯/催化/行业动态/热点/受益/概念 → cls.cn（财联社）
+   - 股票讨论/观点/社区/股吧 → xueqiu.com
+   - 公告/监管/披露/问询 → cninfo.com.cn
+   - 用户明确指定某网站 → 使用该网站域名
+   - 不确定 → baidu.com（兜底）
+
+返回 JSON 格式（不要加 markdown 代码块标记）：
+{"query": "搜索关键词", "domain": "目标域名", "action": "snapshot"}
+
+示例：
+- "搜一下PCB铜箔的最新催化，有哪些受益公司" → {"query": "PCB 铜箔 最新 催化 受益公司", "domain": "cls.cn"}
+- "搜一下宁德时代最新研报，总结然后给我投资建议" → {"query": "宁德时代 锂电池 最新 研报", "domain": "eastmoney.com"}
+- "最近新能源板块有什么新闻" → {"query": "新能源板块 最新 新闻", "domain": "cls.cn"}
+- "帮我看看雪球的茅台讨论" → {"query": "贵州茅台", "domain": "xueqiu.com"}
+- "在东方财富搜索茅台新闻" → {"query": "贵州茅台 新闻", "domain": "eastmoney.com"}
+- "最新财经新闻" → {"query": "财经 最新 新闻", "domain": "cls.cn"}
+- "打开 https://xueqiu.com/S/SH600519" → {"url": "https://xueqiu.com/S/SH600519", "action": "snapshot"}`
+
+/**
+ * v6.1: 浏览器智能操作 Agent Loop 决策 Prompt
+ * 让 LLM 观察 AXTree 并决定下一步操作
+ */
+export const BROWSER_ACTION_PROMPT = `你是浏览器操作助手。根据页面元素列表决定下一步操作。
+
+用户问题：{userInput}
+页面：{url}
+元素（格式：nodeId|角色|名称）：
+{axTree}
+已操作：{steps}
+
+操作：click(需nodeId) / type(需nodeId+text) / scroll(direction:up/down) / extract / done
+
+直接输出JSON，不要代码块，不要解释：
+{"action":"","nodeId":"","text":"","direction":"","reason":""}`

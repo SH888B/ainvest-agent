@@ -2,19 +2,21 @@ import React, { useState } from 'react'
 import { LLMSettings } from './LLMSettings'
 import { PreferenceSettings } from './PreferenceSettings'
 import { MemoryManager } from './MemoryManager'
-import { X, Cpu, User, Brain } from 'lucide-react'
+import { BrowserSettings } from './BrowserSettings'
+import { X, Cpu, User, Brain, Globe } from 'lucide-react'
 
 interface SettingsPageProps {
   open: boolean
   onClose: () => void
 }
 
-type TabKey = 'llm' | 'preference' | 'memory'
+type TabKey = 'llm' | 'preference' | 'memory' | 'browser'
 
 const TABS: { key: TabKey; label: string; icon: React.ReactNode }[] = [
   { key: 'llm', label: '大模型', icon: <Cpu className="h-4 w-4" /> },
   { key: 'preference', label: '个人偏好', icon: <User className="h-4 w-4" /> },
   { key: 'memory', label: '记忆管理', icon: <Brain className="h-4 w-4" /> },
+  { key: 'browser', label: '浏览器', icon: <Globe className="h-4 w-4" /> },
 ]
 
 /**
@@ -63,6 +65,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({ open, onClose }) => 
           {activeTab === 'llm' && <LLMSettings />}
           {activeTab === 'preference' && <PreferenceSettings />}
           {activeTab === 'memory' && <MemoryManager />}
+          {activeTab === 'browser' && <BrowserSettings />}
         </div>
       </div>
     </div>

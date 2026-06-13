@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
 import { MessageList } from './MessageList'
 import { ChatInput } from './ChatInput'
 import { SuggestionCards } from './SuggestionCards'
@@ -15,6 +15,9 @@ import { useDevToolStore } from '../../stores/useDevToolStore'
 import { ChatMessage } from '@shared/types'
 import { isModelReady, isModelLoading, preloadModel } from '../../services/memory/embeddingService'
 
+/** 缓存空数组，避免 zustand selector 每次返回新引用导致无限 re-render */
+const EMPTY_MESSAGES: ChatMessage[] = []
+
 /**
  * 聊天面板主容器
  * 包含消息列表、输入框、API Key 引导横幅和设置入口
@@ -22,16 +25,29 @@ import { isModelReady, isModelLoading, preloadModel } from '../../services/memor
  */
 export const ChatPanel: React.FC = () => {
   const { isConfigValid, llmConfig } = usePreferenceStore()
-  const { currentSessionId, sessions, createSession, autoRenameSession } = useSessionStore()
-  const { getMessages, addMessage, appendAssistantContent, setLoading } = useChatStore()
+  const { currentSessionId, createSession, autoRenameSession } = useSessionStore()
+  const { getMessages, addMessage, appendAssistantContent, setAssistantSource, setLoading } = useChatStore()
   const { memory } = useMemoryStore()
   const { clearTurn } = useThinkingStore()
   const { toggle: toggleDevTool } = useDevToolStore()
   const [input, setInput] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'ready'>('idle')
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  const messages = currentSessionId ? getMessages(currentSessionId) : []
+  const handleCloseSettings = useCallback(() => {
+    setSettingsOpen(false)
+    // BUG-03 修复：关闭设置页后，延迟一帧将焦点还给输入框
+    requestAnimationFrame(() => {
+      inputRef.current?.focus()
+    })
+  }, [])
+
+  // 直接订阅消息列表（修复 v6 之前 useMemo + getMessages 的订阅失效问题）
+  // 注意：用 ?? 而非 || ，因为 || 会每次创建新 [] 引用导致无限 re-render
+  const messages = useChatStore((state) =>
+    currentSessionId ? state.messagesBySession[currentSessionId] ?? EMPTY_MESSAGES : EMPTY_MESSAGES
+  )
 
   // 模型加载状态跟踪 + 后台预加载
   useEffect(() => {
@@ -59,6 +75,7 @@ export const ChatPanel: React.FC = () => {
       let sessionId = currentSessionId
       if (!sessionId) {
         sessionId = createSession()
+        if (!sessionId) return // v6: 防竞态拦截，不继续发送
       }
 
       // 添加用户消息
@@ -67,7 +84,10 @@ export const ChatPanel: React.FC = () => {
       setLoading(true)
 
       // 自动命名 Session
-      const session = sessions.find((s) => s.id === sessionId)
+      // 注意：createSession() 更新了 store，但闭包中的 sessions 可能是旧值
+      // 需要从 store 获取最新 sessions 来确保能找到新创建的 session
+      const latestSessions = useSessionStore.getState().sessions
+      const session = latestSessions.find((s) => s.id === sessionId)
       if (session && !session.isCustomNamed && session.title === '新对话') {
         const newName = generateSessionName(text)
         autoRenameSession(sessionId, newName)
@@ -103,6 +123,9 @@ export const ChatPanel: React.FC = () => {
         onToolResult: (result) => {
           console.log(`[Agent] 工具结果:`, result)
         },
+        onSourceUrl: (url, title) => {
+          setAssistantSource(sessionId, url, title)
+        },
         onError: (error) => {
           appendAssistantContent(sessionId, `\n\n[错误] ${error}`)
         },
@@ -112,7 +135,7 @@ export const ChatPanel: React.FC = () => {
         },
       })
     },
-    [input, currentSessionId, sessions, createSession, addMessage, setLoading, getMessages, llmConfig, isConfigValid, memory, appendAssistantContent, autoRenameSession, clearTurn]
+    [input, currentSessionId, createSession, addMessage, setLoading, getMessages, llmConfig, isConfigValid, memory, appendAssistantContent, autoRenameSession, clearTurn, setAssistantSource]
   )
 
   return (
@@ -172,11 +195,11 @@ export const ChatPanel: React.FC = () => {
 
       {/* 输入框 */}
       <div className="border-t border-border p-4">
-        <ChatInput onSend={() => handleSend()} input={input} setInput={setInput} />
+        <ChatInput onSend={() => handleSend()} input={input} setInput={setInput} inputRef={inputRef} />
       </div>
 
       {/* 设置弹窗 */}
-      <SettingsPage open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsPage open={settingsOpen} onClose={handleCloseSettings} />
     </div>
   )
 }

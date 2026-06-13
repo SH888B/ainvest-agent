@@ -42,9 +42,11 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) =
         a: ({ children, href }) => (
           <a
             href={href}
-            target="_blank"
-            rel="noopener noreferrer"
             className="text-primary hover:underline"
+            onClick={(e) => {
+              e.preventDefault()
+            }}
+            title={href || undefined}
           >
             {children}
           </a>
